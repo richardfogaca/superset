@@ -38,6 +38,7 @@ const PROPORTION = {
   KICKER: 0.1,
   HEADER: 0.3,
   SUBHEADER: 0.125,
+  TOPHEADER: 0.125,
   // trendline size: proportion of the whole chart container
   TRENDLINE: 0.3,
 };
@@ -55,6 +56,8 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
     startYAxisAtZero: true,
     subheader: '',
     subheaderFontSize: PROPORTION.SUBHEADER,
+    topheader: '',
+    topheaderFontSize: PROPORTION.TOPHEADER,
     timeRangeFixed: false,
   };
 
@@ -188,6 +191,77 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
     );
   }
 
+  // <start> add calculation type to panel bignumber--warnerbros
+  renderHeaderWithPrefix(maxHeight: number) {
+    const { bigNumber, headerFormatter, prefix, width } = this.props;
+    // @ts-ignore
+    const text = bigNumber === null ? t('No data') : headerFormatter(bigNumber);
+    const text_with_prefix = prefix + text;
+
+    const container = this.createTemporaryContainer();
+    document.body.append(container);
+    const fontSize = computeMaxFontSize({
+      text,
+      maxWidth: width - 8, // Decrease 8px for more precise font size
+      maxHeight,
+      className: 'header-line',
+      container,
+    });
+    container.remove();
+
+    return (
+      <div
+        className="header-line"
+        style={{
+          fontSize,
+          height: maxHeight,
+        }}
+      >
+        {text_with_prefix}
+      </div>
+    );
+  }
+
+  renderTopheader(maxHeight: number) {
+    const { bigNumber, topheader, width, bigNumberFallback } = this.props;
+    let fontSize = 0;
+    const NO_DATA_OR_HASNT_LANDED = t(
+      'No data after filtering or data is NULL for the latest time record',
+    );
+    const NO_DATA = t(
+      'Try applying different filters or ensuring your datasource has data',
+    );
+    let text = topheader;
+    if (bigNumber === null) {
+      text = bigNumberFallback ? NO_DATA : NO_DATA_OR_HASNT_LANDED;
+    }
+    if (text) {
+      const container = this.createTemporaryContainer();
+      document.body.append(container);
+      fontSize = computeMaxFontSize({
+        text,
+        maxWidth: width,
+        maxHeight,
+        className: 'topheader-line',
+        container,
+      });
+      container.remove();
+
+      return (
+        <div
+          className="topheader-line"
+          style={{
+            fontSize,
+            height: maxHeight,
+          }}
+        >
+          {text}
+        </div>
+      );
+    }
+    return null;
+  }
+
   renderSubheader(maxHeight: number) {
     const { bigNumber, subheader, width, bigNumberFallback } = this.props;
     let fontSize = 0;
@@ -281,6 +355,7 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
       height,
       kickerFontSize,
       headerFontSize,
+      topheaderFontSize,
       subheaderFontSize,
     } = this.props;
     const className = this.getClassName();
@@ -298,7 +373,12 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
                 (kickerFontSize || 0) * (1 - PROPORTION.TRENDLINE) * height,
               ),
             )}
-            {this.renderHeader(
+            {this.renderTopheader(
+              Math.ceil(
+                topheaderFontSize * (1 - PROPORTION.TRENDLINE) * height,
+              ),
+            )}
+            {this.renderHeaderWithPrefix(
               Math.ceil(headerFontSize * (1 - PROPORTION.TRENDLINE) * height),
             )}
             {this.renderSubheader(
@@ -316,7 +396,8 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
       <div className={className} style={{ height }}>
         {this.renderFallbackWarning()}
         {this.renderKicker((kickerFontSize || 0) * height)}
-        {this.renderHeader(Math.ceil(headerFontSize * height))}
+        {this.renderTopheader(Math.ceil(topheaderFontSize * height))}
+        {this.renderHeaderWithPrefix(Math.ceil(headerFontSize * height))}
         {this.renderSubheader(Math.ceil(subheaderFontSize * height))}
       </div>
     );
@@ -331,6 +412,10 @@ export default styled(BigNumberVis)`
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
+    
+    &.no-trendline .topheader-line {
+      padding-bottom: 0.3em;
+    }
 
     &.no-trendline .subheader-line {
       padding-bottom: 0.3em;
@@ -355,6 +440,10 @@ export default styled(BigNumberVis)`
       padding-bottom: 2em;
     }
 
+    .topheader-line {
+      line-height: 1em;
+    }
+
     .header-line {
       position: relative;
       line-height: 1em;
@@ -373,6 +462,9 @@ export default styled(BigNumberVis)`
 
     &.is-fallback-value {
       .kicker,
+      .topheader-line {
+        opacity: ${theme.opacity.mediumHeavy};
+      },
       .header-line,
       .subheader-line {
         opacity: ${theme.opacity.mediumHeavy};

@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { ComparisonType } from '@superset-ui/core';
 import { SMART_DATE_ID, t } from '@superset-ui/core';
 import {
   aggregationControl,
@@ -23,6 +24,7 @@ import {
   ControlSubSectionHeader,
   D3_FORMAT_DOCS,
   D3_TIME_FORMAT_OPTIONS,
+  D3_FORMAT_OPTIONS,
   getStandardizedControls,
   temporalColumnMixin,
 } from '@superset-ui/chart-controls';
@@ -48,6 +50,32 @@ const config: ControlPanelConfig = {
       controlSetRows: [
         [
           {
+            name: 'topheader',
+            config: {
+              type: 'TextControl',
+              label: t('Topheader'),
+              renderTrigger: true,
+              description: t(
+                'Description text that shows up in the top of your Big Number',
+              ),
+            },
+          },
+        ],
+        [
+          {
+            name: 'prefix',
+            config: {
+              type: 'TextControl',
+              label: t('Prefix'),
+              renderTrigger: true,
+              description: t(
+                'Description text that shows up before your Big Number',
+              ),
+            },
+          },
+        ],
+        [
+          {
             name: 'compare_lag',
             config: {
               type: 'TextControl',
@@ -66,6 +94,64 @@ const config: ControlPanelConfig = {
               type: 'TextControl',
               label: t('Comparison suffix'),
               description: t('Suffix to apply after the percentage display'),
+            },
+          },
+        ],
+        [
+          {
+            name: 'comparison_type',
+            config: {
+              type: 'SelectControl',
+              label: t('Calculation type'),
+              default: 'values',
+              choices: [
+                [ComparisonType.Values, 'Actual values'],
+                [ComparisonType.Difference, 'Difference'],
+                [ComparisonType.Percentage, 'Percentage change'],
+              ],
+              description: t(
+                'How to display the comparison: display actual value; as the ' +
+                  'difference between the current and last period; ' +
+                  'as the percentage change; or as the ratio.',
+              ),
+            },
+          },
+        ],
+        [
+          {
+            name: 'variable_calculation',
+            config: {
+              type: 'SelectControl',
+              label: t('Variable Calculation'),
+              default: 'last',
+              choices: [
+                ['first', 'First value'],
+                ['last', 'Last value'],
+                ['sum', 'Sum'],
+                ['average', 'Average'],
+                ['min', 'Min'],
+                ['max', 'Max'],
+              ],
+              description: t(
+                'How the variable data will be defined. ' +
+                  "Example: Top header containing 'Last Week average {{ Weekly Admissions }}' " +
+                  "and selecting 'variable calculation' as average will result in " +
+                  "the average for the 'Weekly Admissions metric'",
+              ),
+            },
+          },
+        ],
+        [
+          {
+            name: 'comparison_format',
+            config: {
+              type: 'SelectControl',
+              label: t('Calculation Format'),
+              default: 'values',
+              choices: D3_FORMAT_OPTIONS,
+              description: t(
+                'Format comparison. This has no effect if Percent change has been selected.',
+              ),
             },
           },
         ],
