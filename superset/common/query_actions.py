@@ -33,6 +33,7 @@ from superset.utils.core import (
     get_column_name,
     get_time_filter_status,
 )
+from superset.utils.code_validator import validate_code
 
 if TYPE_CHECKING:
     from superset.common.query_context import QueryContext
@@ -110,6 +111,22 @@ def _get_full(
         payload["data"] = query_context.get_data(df, payload["coltypes"])
         payload["result_format"] = query_context.result_format
     del payload["df"]
+
+    if query_context.form_data.get("viz_type") == "plotly":
+        from textwrap import dedent
+
+        code_input = query_context.form_data.get("codeInput")
+        sanitized_code = dedent(code_input)
+
+        if not validate_code(sanitized_code):
+            raise ValueError("Unauthorized code attempt")
+
+        # Execute the string to define the function
+        exec(sanitized_code, globals())
+
+        fig = get_plotly(df)
+        fig.update_layout(autosize=True)
+        payload["plotly"] = fig.to_json()
 
     applied_time_columns, rejected_time_columns = get_time_filter_status(
         datasource, query_obj.applied_time_extras

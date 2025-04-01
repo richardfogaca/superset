@@ -254,6 +254,8 @@ pgsanity==0.2.9
     # via apache-superset (pyproject.toml)
 platformdirs==3.8.1
     # via requests-cache
+plotly==5.20.0
+    # via apache-superset (pyproject.toml)
 ply==3.11
     # via jsonpath-ng
 polyline==2.0.2
@@ -274,6 +276,8 @@ pycparser==2.22
     # via cffi
 pygments==2.18.0
     # via rich
+pymysql>=1.1.0
+    # via apache-superset (pyproject.toml)
 pyjwt==2.10.1
     # via
     #   apache-superset (pyproject.toml)

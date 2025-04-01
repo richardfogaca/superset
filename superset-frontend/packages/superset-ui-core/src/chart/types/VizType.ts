@@ -46,6 +46,7 @@ export enum VizType {
   Partition = 'partition',
   Pie = 'pie',
   PivotTable = 'pivot_table_v2',
+  Plotly = 'plotly',
   Radar = 'radar',
   Rose = 'rose',
   Sankey = 'sankey_v2',

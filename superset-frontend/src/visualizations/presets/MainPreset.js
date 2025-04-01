@@ -78,6 +78,7 @@ import {
 } from 'src/filters/components';
 import { PivotTableChartPlugin as PivotTableChartPluginV2 } from '@superset-ui/plugin-chart-pivot-table';
 import { HandlebarsChartPlugin } from '@superset-ui/plugin-chart-handlebars';
+import { PlotlyChartPlugin } from '@superset-ui/plugin-chart-plotly';
 import { FilterPlugins } from 'src/constants';
 import TimeTableChartPlugin from '../TimeTable';
 
@@ -170,6 +171,7 @@ export default class MainPreset extends Preset {
         new EchartsTreeChartPlugin().configure({ key: VizType.Tree }),
         new EchartsSunburstChartPlugin().configure({ key: VizType.Sunburst }),
         new HandlebarsChartPlugin().configure({ key: VizType.Handlebars }),
+        new PlotlyChartPlugin().configure({ key: VizType.Plotly }),
         new EchartsBubbleChartPlugin().configure({ key: VizType.Bubble }),
         new CartodiagramPlugin({
           defaultLayers: [
