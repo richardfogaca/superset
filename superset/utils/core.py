@@ -35,6 +35,8 @@ import threading
 import traceback
 import uuid
 import zlib
+import json
+from typing import Any, Dict
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import closing, contextmanager
 from dataclasses import dataclass
@@ -1012,6 +1014,74 @@ def merge_extra_filters(form_data: dict[str, Any]) -> None:  # noqa: C901
                     adhoc_filters.append(simple_filter_to_adhoc(filtr))
         # Remove extra filters from the form data since no longer needed
         del form_data["extra_filters"]
+
+
+def get_filter_key(f: Dict[str, Any]) -> str:
+    if "expressionType" in f:
+        return "{}__{}".format(f["subject"], f["operator"])
+
+    return "{}__{}".format(f["col"], f["op"])
+
+
+def merge_chart_extra_filters(json_body: Dict[str, Any]):
+    queries = json_body.get('queries', [])
+    if len(queries) > 0:
+        extra_filters = json_body.get('form_data', {}).get('extra_filters', {})
+        upgrade_query = []
+        if not extra_filters:
+            return
+        for query in queries:
+            extra_form_filters = query.get('filters', [])
+            existing_indexes = {}
+            for idx, existing in enumerate(extra_form_filters):
+                key_filter = get_filter_key(existing)
+                existing_indexes[key_filter] = idx
+
+            upgrade_filters = extra_filters.get("upgrade_filters", []) or []
+            for upgrade_filter in upgrade_filters:
+                upgrade_filter["isExtra"] = True
+                filter_key = get_filter_key(upgrade_filter)
+                if filter_key in existing_indexes:
+                    extra_form_filters[existing_indexes[filter_key]] = upgrade_filter
+                else:
+                    extra_form_filters.append(upgrade_filter)
+
+            if extra_form_filters:
+                query["filters"] = extra_form_filters
+                upgrade_query.append(query)
+
+
+def merge_explore_extra_filters(
+    form_data: Dict[str, Any],
+    request_args: Dict[str, Any]
+) -> None:
+    extra_filters = request_args.get('extra_filters', {})
+    if extra_filters:
+        upgrade_filters = json.loads(extra_filters).get("upgrade_filters", []) or []
+        if len(upgrade_filters) == 0:
+            return
+
+        adhoc_filters = form_data.get("adhoc_filters", [])
+        existing_filters = {}
+        existing_indexes = {}
+        for idx, existing in enumerate(adhoc_filters):
+            if (
+                existing["expressionType"] == "SIMPLE"
+                and existing.get("comparator") is not None
+                and existing.get("subject") is not None
+            ):
+                key_filter = get_filter_key(existing)
+                existing_filters[key_filter] = existing["comparator"]
+                existing_indexes[key_filter] = idx
+
+        for upgrade_filter in upgrade_filters:
+            upgrade_filter["isExtra"] = True
+            filter_key = get_filter_key(upgrade_filter)
+            if filter_key in existing_filters:
+                adhoc_filters[existing_indexes[filter_key]] = \
+                    simple_filter_to_adhoc(upgrade_filter)
+            else:
+                adhoc_filters.append(simple_filter_to_adhoc(upgrade_filter))
 
 
 def merge_request_params(form_data: dict[str, Any], params: dict[str, Any]) -> None:
