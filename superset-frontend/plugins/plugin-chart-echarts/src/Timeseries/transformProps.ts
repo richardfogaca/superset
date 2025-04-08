@@ -158,6 +158,7 @@ export default function transformProps(
     opacity,
     orientation,
     percentageThreshold,
+    removeNullValues,
     richTooltip,
     seriesType,
     showLegend,
@@ -333,6 +334,10 @@ export default function transformProps(
       },
     );
     if (transformedSeries) {
+      if (seriesType === 'line' && removeNullValues) {
+        // @ts-ignore
+        transformedSeries.connectNulls = true;
+      }
       if (stack === StackControlsValue.Stream) {
         // bug in Echarts - `stackStrategy: 'all'` doesn't work with nulls, so we cast them to 0
         series.push({

@@ -108,6 +108,20 @@ const config: ControlPanelConfig = {
         ],
         [
           {
+            name: 'removeNullValues',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Remove Null Values'),
+              renderTrigger: true,
+              default: false,
+              description: t(
+                'Remove null values from the data. When enabled, lines will connect across null values.',
+              ),
+            },
+          },
+        ],
+        [
+          {
             name: 'opacity',
             config: {
               type: 'SliderControl',
