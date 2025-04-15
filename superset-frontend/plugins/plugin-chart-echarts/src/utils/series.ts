@@ -31,6 +31,7 @@ import {
   NumberFormatter,
   SupersetTheme,
   TimeFormatter,
+  TimeGranularity,
   ValueFormatter,
 } from '@superset-ui/core';
 import { SortSeriesType, LegendPaddingType } from '@superset-ui/chart-controls';
@@ -41,6 +42,7 @@ import { isEmpty, maxBy, meanBy, minBy, orderBy, sumBy } from 'lodash';
 import {
   NULL_STRING,
   StackControlsValue,
+  TIMEGRAIN_TO_TIMESTAMP,
   TIMESERIES_CONSTANTS,
 } from '../constants';
 import {
@@ -684,4 +686,35 @@ export function extractTooltipKeys(
     return forecastValue.map(s => s[TOOLTIP_SERIES_KEY]);
   }
   return [forecastValue[0][TOOLTIP_SERIES_KEY]];
+}
+
+const isNumber = (value: any): value is number => typeof value === 'number';
+
+export function getMinInterval({
+  xAxisType,
+  timeGrainSqla,
+  xAxisMinInterval,
+}: {
+  xAxisType: AxisType;
+  timeGrainSqla?: TimeGranularity;
+  xAxisMinInterval: string;
+}) {
+  const xMinInterval =
+    xAxisMinInterval && isNumber(parseFloat(xAxisMinInterval))
+      ? parseFloat(xAxisMinInterval)
+      : undefined;
+
+  if (xMinInterval) {
+    return xMinInterval;
+  }
+  if (
+    xAxisType === 'time' &&
+    timeGrainSqla &&
+    timeGrainSqla in TIMEGRAIN_TO_TIMESTAMP
+  ) {
+    return TIMEGRAIN_TO_TIMESTAMP[
+      timeGrainSqla as keyof typeof TIMEGRAIN_TO_TIMESTAMP
+    ];
+  }
+  return 0;
 }
