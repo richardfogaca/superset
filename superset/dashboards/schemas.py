@@ -165,6 +165,7 @@ class DashboardJSONMetadataSchema(Schema):
     # used for v0 import/export
     import_time = fields.Integer()
     remote_id = fields.Integer()
+    priority_label_colors = fields.Dict()
     filter_bar_orientation = fields.Str(allow_none=True)
     native_filter_migration = fields.Dict()
 

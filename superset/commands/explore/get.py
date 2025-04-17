@@ -23,6 +23,7 @@ from flask import request
 from flask_babel import lazy_gettext as _
 from sqlalchemy.exc import SQLAlchemyError
 
+from superset import app
 from superset.commands.base import BaseCommand
 from superset.commands.explore.form_data.get import GetFormDataCommand
 from superset.commands.explore.form_data.parameters import (
@@ -45,6 +46,7 @@ from superset.views.utils import (
 )
 
 logger = logging.getLogger(__name__)
+config = app.config
 
 
 class GetExploreCommand(BaseCommand, ABC):
@@ -167,6 +169,12 @@ class GetExploreCommand(BaseCommand, ABC):
                 metadata["created_by"] = slc.created_by.get_full_name()
             if slc.changed_by:
                 metadata["changed_by"] = slc.changed_by.get_full_name()
+        
+        priority_label_colors: dict[str, str] = config.get('DEFAULT_LABEL_COLORS', None)
+        if priority_label_colors and form_data:
+            if not form_data.get("label_colors", None):
+                form_data["label_colors"]: dict[str, str] = {}
+            form_data["label_colors"].update(priority_label_colors)
 
         return {
             "dataset": sanitize_datasource_data(datasource_data),

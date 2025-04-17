@@ -63,7 +63,10 @@ export default class CategoricalColorNamespace {
    * @param {*} forcedColor color
    */
   setColor(value: string, forcedColor: string) {
-    this.forcedItems[stringifyAndTrim(value)] = forcedColor;
+    const keyName = stringifyAndTrim(value);
+    if (!(keyName in this.forcedItems)) {
+      this.forcedItems[keyName] = forcedColor;
+    }
 
     return this;
   }

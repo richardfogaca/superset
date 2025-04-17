@@ -23,7 +23,7 @@ from typing import Any
 from flask import g
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 
-from superset import is_feature_enabled, security_manager
+from superset import is_feature_enabled, security_manager, app
 from superset.commands.dashboard.exceptions import (
     DashboardAccessDeniedError,
     DashboardForbiddenError,
@@ -43,6 +43,7 @@ from superset.utils.core import get_user_id
 from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
 
 logger = logging.getLogger(__name__)
+config = app.config
 
 
 class DashboardDAO(BaseDAO[Dashboard]):
@@ -67,6 +68,18 @@ class DashboardDAO(BaseDAO[Dashboard]):
             dashboard = query.one_or_none()
         if not dashboard:
             raise DashboardNotFoundError()
+
+        json_metadata = json.loads(getattr(dashboard, "json_metadata", "{}") or "{}")
+        label_color = json_metadata.get("priority_label_colors", None)
+
+        if not label_color:
+            json_metadata["priority_label_colors"]: Dict[str, str] = {}
+
+        priority_label_colors: Dict[str, str] = config.get('DEFAULT_LABEL_COLORS', None)
+        if json_metadata and priority_label_colors:
+            json_metadata["priority_label_colors"].update(priority_label_colors)
+
+        setattr(dashboard, "json_metadata", json.dumps(json_metadata))
 
         # make sure we still have basic access check from security manager
         try:

@@ -219,6 +219,7 @@ export const applyColors = (
   const sharedLabels = enforceSharedLabelsColorsArray(
     metadata?.shared_label_colors,
   );
+  const priorityLabelsColor = metadata?.priority_label_colors || {};
   const customLabelsColor = metadata?.label_colors || {};
   const sharedLabelsColor = getSharedLabelsColorMapEntries(
     fullLabelsColor,
@@ -270,6 +271,7 @@ export const applyColors = (
   applicableColorMapEntries = {
     ...applicableColorMapEntries,
     ...customLabelsColor,
+    ...priorityLabelsColor,
   };
 
   // apply the final color map

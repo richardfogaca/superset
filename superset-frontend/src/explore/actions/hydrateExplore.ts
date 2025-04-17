@@ -34,6 +34,7 @@ import {
   NO_TIME_RANGE,
   QueryFormColumn,
   VizType,
+  CategoricalColorNamespace,
 } from '@superset-ui/core';
 import {
   getFormDataFromControls,
@@ -187,6 +188,12 @@ export const hydrateExplore =
       triggerQuery: false,
       lastRendered: 0,
     };
+
+    const customLabelColors = initialFormData?.label_colors || {};
+    const categoricalNamespace = CategoricalColorNamespace.getNamespace();
+    Object.keys(customLabelColors).forEach(label => {
+      categoricalNamespace.setColor(label, customLabelColors[label]);
+    });
 
     return dispatch({
       type: HYDRATE_EXPLORE,
