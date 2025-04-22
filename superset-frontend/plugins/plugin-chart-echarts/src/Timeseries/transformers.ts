@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -25,6 +26,7 @@ import {
   FilterState,
   FormulaAnnotationLayer,
   IntervalAnnotationLayer,
+  isPhysicalColumn,
   isTimeseriesAnnotationResult,
   LegendState,
   SupersetTheme,
@@ -50,11 +52,16 @@ import type {
 import type { MarkLine1DDataItemOption } from 'echarts/types/src/component/marker/MarkLineModel';
 import { extractForecastSeriesContext } from '../utils/forecast';
 import {
+  DataType,
   EchartsTimeseriesSeriesType,
   ForecastSeriesEnum,
   LegendOrientation,
   OrientationType,
+  ProcessTransformedSeriesProps,
+  StackBarXAxisSecondLevelProps,
+  StackBarYAxisSecondLevelProps,
   StackType,
+  VerboseMapType,
 } from '../types';
 
 import {
@@ -626,4 +633,175 @@ export function getPadding(
     },
     isHorizontal,
   );
+}
+
+function processEntry(
+  entry: { name: string | null; stack: string },
+  legendData: string[],
+  secondLevelXAxis: Set<string>,
+  verboseMap: VerboseMapType,
+) {
+  if (entry.name !== null && entry.name !== undefined) {
+    entry.name = verboseMap[entry.name] || entry.name;
+    legendData.push(entry.name);
+  }
+  if (entry.stack && entry.stack !== 'obs') {
+    secondLevelXAxis.add(entry.stack);
+  }
+}
+
+function updateLengthXAxis(entry: { stack: string }, lengthXAxis: number) {
+  const sizeAxis = entry.stack.length || 0;
+  if (lengthXAxis < sizeAxis) {
+    return sizeAxis;
+  }
+  return lengthXAxis;
+}
+
+function calculateRealLabelRotationAndOffset(
+  xAxisLabelRotation: number,
+  lengthXAxis: number,
+) {
+  let xRealLabelRotation = xAxisLabelRotation;
+  if (xAxisLabelRotation < 40) {
+    xRealLabelRotation = xAxisLabelRotation <= 5 ? 1.5 : xAxisLabelRotation - 5;
+  }
+
+  let offsetReal = lengthXAxis * Math.pow(xRealLabelRotation, 0.43);
+  if (xAxisLabelRotation === 0.0) {
+    offsetReal = 20;
+  }
+
+  return { xRealLabelRotation, offsetReal };
+}
+
+function updateXAxisOptions(
+  echartOptions: any,
+  xRealLabelRotation: number,
+  offsetReal: number,
+  secondLevelXAxis: Set<string>,
+  xAxisCategories: Set<any>,
+) {
+  echartOptions.xAxis = [
+    {
+      ...echartOptions.xAxis,
+      offset: offsetReal,
+    },
+    {
+      position: 'bottom',
+      axisLabel: {
+        interval: 0,
+        rotate: xRealLabelRotation,
+        overflow: 'truncate',
+      },
+      axisLine: {
+        show: false,
+      },
+      axisTick: {
+        show: false,
+      },
+      data: Array.from({ length: xAxisCategories.size }, () => [
+        ...secondLevelXAxis,
+      ]).flat(),
+    },
+  ];
+}
+
+export function stackBarXAxisSecondLevel({
+  seriesType,
+  stack,
+  echartOptions,
+  verboseMap,
+  xAxisOrig,
+  data,
+  xAxisLabelRotation,
+}: StackBarXAxisSecondLevelProps) {
+  if (seriesType === 'bar' && stack) {
+    // eslint-disable-next-line no-param-reassign
+    echartOptions.legend.data = [];
+    const secondLevelXAxis = new Set<string>();
+    let lengthXAxis = 0.0;
+    // @ts-ignore
+    echartOptions.series.forEach(entry => {
+      processEntry(
+        entry,
+        echartOptions.legend.data,
+        secondLevelXAxis,
+        verboseMap,
+      );
+      if (entry.stack && entry.stack !== 'obs') {
+        secondLevelXAxis.add(entry.stack);
+        lengthXAxis = updateLengthXAxis(entry, lengthXAxis);
+      }
+    });
+    if (secondLevelXAxis.size > 0) {
+      const xAxisCategories = new Set();
+      const xAxisPhy = isPhysicalColumn(xAxisOrig)
+        ? xAxisOrig
+        : xAxisOrig.label;
+      data.forEach((entry: any) => {
+        xAxisCategories.add(entry[xAxisPhy]);
+      });
+      // eslint-disable-next-line no-param-reassign
+      delete echartOptions.xAxis.axisLabel.rotate;
+      // eslint-disable-next-line no-param-reassign
+      delete echartOptions.xAxis.axisLabel.width;
+      const { xRealLabelRotation, offsetReal } =
+        calculateRealLabelRotationAndOffset(
+          Number(xAxisLabelRotation),
+          lengthXAxis,
+        );
+      updateXAxisOptions(
+        echartOptions,
+        xRealLabelRotation,
+        offsetReal,
+        secondLevelXAxis,
+        xAxisCategories,
+      );
+    }
+  }
+}
+
+export const isNumeral = (str: string): boolean => /^\d+$/.test(str);
+
+export function splitStack({
+  transformedSeries,
+  isHorizontal,
+  onlyTotal,
+  stack,
+  groupby,
+  legendNames,
+  colorScale,
+  sliceId,
+  hasDoubleComma,
+}: ProcessTransformedSeriesProps): boolean {
+  const { label: default_label } = transformedSeries;
+
+  if (onlyTotal) default_label.position = isHorizontal ? 'right' : 'top';
+  let name: string = transformedSeries.name as string;
+  if (stack) {
+    const names = name?.split(',');
+    if (groupby && groupby.length !== names.length - 1) {
+      hasDoubleComma = true;
+      console.warn(
+        '[WARNING] There too much comma to ' +
+          'differentiate the dimensions (or group by) and to ' +
+          'make a multi-level BarChart.',
+      );
+    }
+    // change of metric to label-name
+    if (names.length > 1 && !hasDoubleComma) {
+      name = names.at(0) ?? '';
+      names[0] = name;
+      transformedSeries.id = names.join(',');
+      transformedSeries.name = name;
+      legendNames.push(name); // fix missing legend names when hiding secondary label
+      const dimensions = names.slice(1); // recovery dimension name
+      transformedSeries.stack = dimensions.join(' -').trim();
+      if (isNumeral(transformedSeries.stack)) {
+        transformedSeries.stack = `${transformedSeries.stack} `;
+      }
+    }
+  }
+  return false;
 }

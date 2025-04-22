@@ -21,6 +21,7 @@ import {
   AnnotationLayer,
   AxisType,
   ContributionType,
+  QueryFormColumn,
   QueryFormData,
   QueryFormMetric,
   TimeFormatter,
@@ -89,6 +90,8 @@ export type EchartsTimeseriesFormData = QueryFormData & {
   zoomable: boolean;
   richTooltip: boolean;
   xAxisLabelRotation: number;
+  showSecondaryXAxis: boolean;
+  showSecondaryYAxis: boolean;
   showValue: boolean;
   onlyTotal: boolean;
   showExtraControls: boolean;
@@ -114,3 +117,37 @@ export type TimeseriesChartTransformedProps =
       };
       onFocusedSeries: (series: string | null) => void;
     };
+
+export type DataType = { [key: string]: any };
+export type VerboseMapType = { [key: string]: string };
+export type StackBarXAxisSecondLevelProps = {
+  stack: Partial<StackType>;
+  seriesType: EchartsTimeseriesSeriesType;
+  echartOptions: any;
+  verboseMap: VerboseMapType;
+  xAxisOrig: any;
+  data: DataType[];
+  xAxisLabelRotation: number;
+};
+export type StackBarYAxisSecondLevelProps = StackBarXAxisSecondLevelProps & {
+  yAxisTitlePosition: string;
+};
+type TransformedSeriesType = {
+  label: any;
+  id?: string;
+  name?: string;
+  stack?: string;
+  itemStyle?: any;
+};
+export type ProcessTransformedSeriesProps = {
+  transformedSeries: TransformedSeriesType;
+  isHorizontal: boolean;
+  onlyTotal: boolean;
+  removeNullValues: boolean;
+  stack: StackType;
+  groupby?: QueryFormColumn[];
+  legendNames: string[];
+  colorScale: Function;
+  sliceId: any;
+  hasDoubleComma: boolean;
+};
