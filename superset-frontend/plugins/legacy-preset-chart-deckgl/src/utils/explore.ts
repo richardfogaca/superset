@@ -17,10 +17,11 @@
  * under the License.
  */
 import URI from 'urijs';
-import { JsonObject } from '@superset-ui/core';
+import { JsonObject, getBootstrapData } from '@superset-ui/core';
 import { safeStringify } from './safeStringify';
 
-const MAX_URL_LENGTH = 8000;
+const bootstrapData = getBootstrapData();
+const MAX_URL_LENGTH = bootstrapData.common.conf.MAX_URL_LENGTH || 8000;
 
 export function getURIDirectory(endpointType = 'base') {
   // Building the directory part of the URI
