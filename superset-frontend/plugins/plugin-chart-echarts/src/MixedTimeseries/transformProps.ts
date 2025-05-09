@@ -500,6 +500,22 @@ export default function transformProps(
   const { setDataMask = () => {}, onContextMenu } = hooks;
   const alignTicks = yAxisIndex !== yAxisIndexB;
 
+  const legendLabels = rawSeriesA
+    .concat(rawSeriesB)
+    .filter(
+      entry =>
+        extractForecastSeriesContext((entry.name || '') as string).type ===
+        ForecastSeriesEnum.Observation,
+    )
+    .map(entry => entry.name || '');
+
+  const annotationLabels = extractAnnotationLabels(
+    annotationLayers,
+    annotationData,
+  );
+  // @ts-ignore
+  const legendData = annotationLabels.concat(legendLabels);
+
   const echartOptions: EChartsCoreOption = {
     useUTC: true,
     grid: {
@@ -653,16 +669,7 @@ export default function transformProps(
         theme,
         zoomable,
       ),
-      // @ts-ignore
-      data: rawSeriesA
-        .concat(rawSeriesB)
-        .filter(
-          entry =>
-            extractForecastSeriesContext((entry.name || '') as string).type ===
-            ForecastSeriesEnum.Observation,
-        )
-        .map(entry => entry.name || '')
-        .concat(extractAnnotationLabels(annotationLayers, annotationData)),
+      data: legendData,
     },
     series: dedupSeries(reorderForecastSeries(series) as SeriesOption[]),
     toolbox: {
