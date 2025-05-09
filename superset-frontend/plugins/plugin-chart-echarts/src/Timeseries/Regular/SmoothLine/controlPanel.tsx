@@ -40,6 +40,7 @@ import {
   truncateXAxis,
   xAxisBounds,
   xAxisLabelRotation,
+  legendSortControl,
 } from '../../../controls';
 
 const {
@@ -113,6 +114,7 @@ const config: ControlPanelConfig = {
         ],
         [minorTicks],
         ...legendSection,
+        [legendSortControl],
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
         [
           {

@@ -40,6 +40,7 @@ import {
   truncateXAxis,
   xAxisBounds,
   minorTicks,
+  legendSortControl,
 } from '../../controls';
 import { AreaChartStackControlOptions } from '../../constants';
 
@@ -183,6 +184,7 @@ const config: ControlPanelConfig = {
           },
         ],
         ...legendSection,
+        [legendSortControl],
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
         [
           {
