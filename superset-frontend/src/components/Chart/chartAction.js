@@ -191,6 +191,25 @@ const v1ChartDataRequest = async (
     allowDomainSharding,
   }).toString();
 
+  if (formData.extra_filters) {
+    payload.form_data.extra_filters = formData.extra_filters;
+  } else {
+    const newExtraFilters = [];
+    if (formData.adhoc_filters) {
+      for (let i = 0; i < formData.adhoc_filters.length; i += 1) {
+        if (formData.adhoc_filters[i].isExtra) {
+          const newExtra = {
+            col: formData.adhoc_filters[i].subject,
+            op: formData.adhoc_filters[i].operator,
+            val: formData.adhoc_filters[i].comparator,
+          };
+          newExtraFilters.push(newExtra);
+        }
+      }
+      payload.form_data.extra_filters = newExtraFilters;
+    }
+  }
+
   const querySettings = {
     ...requestParams,
     url,

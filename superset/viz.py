@@ -2142,6 +2142,159 @@ class PairedTTestViz(BaseViz):
         return data
 
 
+class EchartsTimeSeriesLine(BaseViz):
+    credits = '<a href="https://echarts.apache.org">Apache ECharts</a>'
+    viz_type: Optional[str] = "echarts_timeseries_line"
+    verbose_name = _("Echarts Time Series - Echarts Line Chart")
+    is_timeseries = True
+    pivot_fill_value: Optional[int] = None
+
+    def get_df(self, query_obj: Optional[QueryObjectDict] = None) -> pd.DataFrame:
+        """Retrieve and sort the DataFrame based on x-axis column"""
+        df = super().get_df()
+        column_to_sort_by = self.data.get('form_data', {}).get('x_axis', None)
+        if isinstance(column_to_sort_by, dict):
+            column_to_sort_by = column_to_sort_by.get('label', None)
+        if column_to_sort_by and not df.empty:
+            df.sort_values(by=column_to_sort_by, inplace=True)
+        return df
+
+    def query_obj(self) -> QueryObjectDict:
+        """Configure the query parameters for this visualization"""
+        query_parameters = super().query_obj()
+        query_parameters["is_timeseries"] = False
+
+        query_parameters["apply_fetch_values_predicate"] = False
+        query_parameters["is_rowcount"] = False
+        query_parameters["series_limit"] = 100
+        query_parameters["series_limit_metric"] = None
+        
+        x_axis_column_name = self.form_data.get("x_axis", None)
+        group_by_columns = query_parameters.get("groupby", [])
+        query_parameters["columns"] = copy.copy(group_by_columns)
+        query_parameters["columns"].append(x_axis_column_name)
+        
+        try:
+            group_by_columns.remove(x_axis_column_name)
+        except ValueError:
+            pass
+            
+        query_parameters["series_columns"] = copy.copy(group_by_columns)
+
+        del query_parameters["timeseries_limit_metric"]
+        del query_parameters["groupby"]
+
+        return query_parameters
+
+    def _convert_dataframe_to_series_format(self, df: pd.DataFrame, class_name: str = "", suffix: str = "") -> List[Dict[str, Any]]:
+        """Transform DataFrame to series format for chart rendering"""
+        series_annotation_prefix = self.form_data.get("annotation_name", None)
+        series_annotation_prefix = series_annotation_prefix + ", " if series_annotation_prefix else ""
+        
+        cleaned_column_names = []
+        for column_name in df.columns:
+            if column_name == "":
+                cleaned_column_names.append("N/A")
+            elif column_name is None:
+                cleaned_column_names.append("NULL")
+            else:
+                cleaned_column_names.append(column_name)
+        df.columns = cleaned_column_names
+        
+        series = df.to_dict("series")
+        output_series_data = []
+        
+        if df.empty:
+            return output_series_data
+            
+        x_axis_label = self.form_data.get("x_axis")
+        if isinstance(x_axis_label, dict):
+            x_axis_label = x_axis_label.get('label', None)
+        x_axis_data_values = series[x_axis_label]
+        
+        for current_series_name in df.T.index.tolist():
+            if current_series_name == x_axis_label:
+                continue
+                
+            y_axis_data_values = series[current_series_name]
+            if df[current_series_name].dtype.kind not in "biufc":
+                continue
+                
+            if isinstance(current_series_name, list):
+                series_title = [str(title_part) for title_part in current_series_name]
+            elif isinstance(current_series_name, tuple):
+                series_title = tuple(str(title_part) for title_part in current_series_name)
+            else:
+                series_title = str(current_series_name)
+                
+            if (
+                isinstance(series_title, (list, tuple))
+                and len(series_title) > 1
+                and len(self.metric_labels) == 1
+            ):
+                series_title = series_title[1:]
+                
+            if suffix:
+                if isinstance(series_title, str):
+                    series_title = (series_title, suffix)
+                elif isinstance(series_title, list):
+                    series_title = series_title + [suffix]
+                elif isinstance(series_title, tuple):
+                    series_title = series_title + (suffix,)
+
+            series_data_points = []
+            num_valid_data_points = 0
+            for index_value in df.index:
+                if index_value in y_axis_data_values:
+                    data_point = {"x": x_axis_data_values[index_value], "y": y_axis_data_values[index_value]}
+                    if not np.isnan(y_axis_data_values[index_value]):
+                        num_valid_data_points += 1
+                else:
+                    data_point = {}
+                series_data_points.append(data_point)
+
+            if num_valid_data_points == 0:
+                continue
+
+            current_series_object = {"key": series_annotation_prefix + series_title, "values": series_data_points}
+            if class_name:
+                current_series_object["classed"] = class_name
+            output_series_data.append(current_series_object)
+            
+        return output_series_data
+
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        """Process data and apply post-processing operations"""
+        try:
+            for post_processor_config in self.form_data.get("post_processing", []):
+                if post_processor_config is None:
+                    continue
+                    
+                operation_name = post_processor_config.get("operation")
+                if not operation_name:
+                    raise QueryObjectValidationError(
+                        _("`operation` property must be defined in post processing")
+                    )
+                    
+                if not hasattr(pandas_postprocessing, operation_name):
+                    raise QueryObjectValidationError(
+                        _("Unsupported post processing operation: %(operation)s", 
+                          type=operation_name)
+                    )
+                    
+                if not df.empty:
+                    operation_options = post_processor_config.get("options", {})
+                    df = getattr(pandas_postprocessing, operation_name)(df, **operation_options)
+
+            final_result_data = self._convert_dataframe_to_series_format(df.dropna(axis=1, how="all"))
+            final_result_data = sorted(final_result_data, key=lambda x: tuple(x["key"]))
+            
+            return final_result_data
+            
+        except Exception as exception_instance:
+            raise SupersetException(f"Error in data processing: {exception_instance}")
+
+
 class RoseViz(NVD3TimeSeriesViz):
     viz_type = "rose"
     verbose_name = _("Time Series - Nightingale Rose Chart")

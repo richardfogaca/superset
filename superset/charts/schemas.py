@@ -1050,7 +1050,7 @@ class AnnotationLayerSchema(Schema):
         keys=fields.String(
             metadata={"description": "Name of property to be overridden"},
             validate=validate.OneOf(
-                choices=("granularity", "time_grain_sqla", "time_range", "time_shift"),
+                choices=("granularity", "time_grain_sqla", "time_range", "time_shift", "extra_filters"),
             ),
         ),
         values=fields.Raw(allow_none=True),
@@ -1117,6 +1117,10 @@ class AnnotationLayerSchema(Schema):
         },
         required=True,
     )
+
+    extra_filters = fields.List(fields.Dict(keys=fields.String(),
+                                            values=fields.Raw()),
+                                allow_none=True)
 
 
 class ChartDataDatasourceSchema(Schema):
