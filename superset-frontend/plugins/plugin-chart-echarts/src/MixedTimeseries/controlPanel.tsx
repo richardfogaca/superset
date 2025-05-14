@@ -20,6 +20,7 @@ import { ensureIsArray, t } from '@superset-ui/core';
 import { cloneDeep } from 'lodash';
 import {
   ControlPanelConfig,
+  ControlPanelsContainerProps,
   ControlPanelSectionConfig,
   ControlSetRow,
   ControlSubSectionHeader,
@@ -193,6 +194,35 @@ function createCustomizeSection(
           description: t(
             'Whether to display the numerical values within the cells',
           ),
+        },
+      },
+    ],
+    [
+      {
+        name: `only_total${controlSuffix}`,
+        config: {
+          type: 'CheckboxControl',
+          label: t('Only Total'),
+          default: true,
+          renderTrigger: true,
+          description: t(
+            'Only show the total value on the stack, and not show on the selected category',
+          ),
+          visibility: ({ controls }: ControlPanelsContainerProps) => {
+            if (controlSuffix === '') {
+              return (
+                Boolean(controls?.show_value?.value) &&
+                Boolean(controls?.stack?.value)
+              );
+            }
+            if (controlSuffix === 'B') {
+              return (
+                Boolean(controls?.show_valueB?.value) &&
+                Boolean(controls?.stackB?.value)
+              );
+            }
+            return false;
+          },
         },
       },
     ],

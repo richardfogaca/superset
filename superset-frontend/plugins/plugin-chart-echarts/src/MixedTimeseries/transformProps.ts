@@ -206,6 +206,8 @@ export default function transformProps(
     percentageThreshold,
     metrics = [],
     metricsB = [],
+    onlyTotal,
+    onlyTotalB,
   }: EchartsMixedTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
 
   const refs: Refs = {};
@@ -287,9 +289,12 @@ export default function transformProps(
   );
   const showValueIndexesA = extractShowValueIndexes(rawSeriesA, {
     stack,
+    onlyTotal,
   });
   const showValueIndexesB = extractShowValueIndexes(rawSeriesB, {
     stack,
+    onlyTotal: onlyTotalB,
+    seriesOffset: rawSeriesA.length,
   });
   const { totalStackedValues, thresholdValues } = extractDataTotalValues(
     rebasedDataA,
@@ -307,56 +312,6 @@ export default function transformProps(
     percentageThreshold,
     xAxisCol: xAxisLabel,
   });
-
-  annotationLayers
-    .filter((layer: AnnotationLayer) => layer.show)
-    .forEach((layer: AnnotationLayer) => {
-      if (isFormulaAnnotationLayer(layer))
-        series.push(
-          transformFormulaAnnotation(
-            layer,
-            data1,
-            xAxisLabel,
-            xAxisType,
-            colorScale,
-            sliceId,
-          ),
-        );
-      else if (isIntervalAnnotationLayer(layer)) {
-        series.push(
-          ...transformIntervalAnnotation(
-            layer,
-            data1,
-            annotationData,
-            colorScale,
-            theme,
-            sliceId,
-          ),
-        );
-      } else if (isEventAnnotationLayer(layer)) {
-        series.push(
-          ...transformEventAnnotation(
-            layer,
-            data1,
-            annotationData,
-            colorScale,
-            theme,
-            sliceId,
-          ),
-        );
-      } else if (isTimeseriesAnnotationLayer(layer)) {
-        series.push(
-          ...transformTimeseriesAnnotation(
-            layer,
-            markerSize,
-            data1,
-            annotationData,
-            colorScale,
-            sliceId,
-          ),
-        );
-      }
-    });
 
   // yAxisBounds need to be parsed to replace incompatible values with undefined
   const [xAxisMin, xAxisMax] = (xAxisBounds || []).map(parseAxisBound);
@@ -410,6 +365,7 @@ export default function transformProps(
         totalStackedValues,
         thresholdValues,
         timeShiftColor,
+        onlyTotal,
       },
     );
     if (transformedSeries) series.push(transformedSeries);
@@ -460,6 +416,7 @@ export default function transformProps(
         totalStackedValues: totalStackedValuesB,
         thresholdValues: thresholdValuesB,
         timeShiftColor,
+        onlyTotal: onlyTotalB,
       },
     );
     if (transformedSeries) series.push(transformedSeries);
@@ -499,6 +456,57 @@ export default function transformProps(
 
   const { setDataMask = () => {}, onContextMenu } = hooks;
   const alignTicks = yAxisIndex !== yAxisIndexB;
+
+  // Annotation layers must be processed later for only totals indexes to work
+  annotationLayers
+    .filter((layer: AnnotationLayer) => layer.show)
+    .forEach((layer: AnnotationLayer) => {
+      if (isFormulaAnnotationLayer(layer))
+        series.push(
+          transformFormulaAnnotation(
+            layer,
+            data1,
+            xAxisLabel,
+            xAxisType,
+            colorScale,
+            sliceId,
+          ),
+        );
+      else if (isIntervalAnnotationLayer(layer)) {
+        series.push(
+          ...transformIntervalAnnotation(
+            layer,
+            data1,
+            annotationData,
+            colorScale,
+            theme,
+            sliceId,
+          ),
+        );
+      } else if (isEventAnnotationLayer(layer)) {
+        series.push(
+          ...transformEventAnnotation(
+            layer,
+            data1,
+            annotationData,
+            colorScale,
+            theme,
+            sliceId,
+          ),
+        );
+      } else if (isTimeseriesAnnotationLayer(layer)) {
+        series.push(
+          ...transformTimeseriesAnnotation(
+            layer,
+            markerSize,
+            data1,
+            annotationData,
+            colorScale,
+            sliceId,
+          ),
+        );
+      }
+    });
 
   const echartOptions: EChartsCoreOption = {
     useUTC: true,

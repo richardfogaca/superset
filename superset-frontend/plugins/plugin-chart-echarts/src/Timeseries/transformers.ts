@@ -342,12 +342,16 @@ export function transformSeries(
           return formatter(numericValue);
         }
         if (!onlyTotal) {
-          if (
-            numericValue >=
-            (thresholdValues[dataIndex] || Number.MIN_SAFE_INTEGER)
-          ) {
+          let currentThreshold =
+            thresholdValues?.[dataIndex] ?? Number.MIN_SAFE_INTEGER;
+          if (value === undefined || value === null) {
+            currentThreshold = Number.MIN_SAFE_INTEGER;
+          }
+          if (numericValue > currentThreshold) {
             return formatter(numericValue);
           }
+          if (Math.abs(numericValue) > currentThreshold)
+            return formatter(numericValue);
           return '';
         }
         if (seriesIndex === showValueIndexes[dataIndex]) {

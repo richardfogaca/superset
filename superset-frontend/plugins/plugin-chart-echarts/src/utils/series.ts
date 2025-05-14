@@ -99,29 +99,36 @@ export function extractShowValueIndexes(
     onlyTotal?: boolean;
     isHorizontal?: boolean;
     legendState?: LegendState;
+    seriesOffset?: number;
   },
 ): number[] {
   const showValueIndexes: number[] = [];
-  const { legendState, stack, isHorizontal, onlyTotal } = opts;
+  const {
+    legendState,
+    stack,
+    isHorizontal,
+    onlyTotal,
+    seriesOffset = 0,
+  } = opts;
   if (stack) {
     series.forEach((entry, seriesIndex) => {
       const { data = [] } = entry;
       (data as [any, number][]).forEach((datum, dataIndex) => {
+        const value = datum[isHorizontal ? 0 : 1];
+        const label = datum[isHorizontal ? 1 : 0];
+
         if (entry.id && legendState && !legendState[entry.id]) {
           return;
         }
-        if (!onlyTotal && datum[isHorizontal ? 0 : 1] !== null) {
-          showValueIndexes[dataIndex] = seriesIndex;
+        if (!onlyTotal && value !== null) {
+          showValueIndexes[label] = dataIndex + seriesOffset;
         }
         if (onlyTotal) {
-          if (datum[isHorizontal ? 0 : 1] > 0) {
-            showValueIndexes[dataIndex] = seriesIndex;
+          if (value > 0) {
+            showValueIndexes[label] = seriesIndex + seriesOffset;
           }
-          if (
-            !showValueIndexes[dataIndex] &&
-            datum[isHorizontal ? 0 : 1] !== null
-          ) {
-            showValueIndexes[dataIndex] = seriesIndex;
+          if (!showValueIndexes[label] && isDefined(value)) {
+            showValueIndexes[label] = seriesIndex + seriesOffset;
           }
         }
       });
