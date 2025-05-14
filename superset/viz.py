@@ -2365,6 +2365,99 @@ class PartitionViz(NVD3TimeSeriesViz):
         return self.nest_values(levels)
 
 
+class HeatmapViz(BaseViz):
+    """A nice heatmap visualization that support high density through canvas"""
+
+    viz_type = "heatmap"
+    verbose_name = _("Heatmap Legacy")
+    is_timeseries = False
+    credits = (
+        'inspired from mbostock @<a href="http://bl.ocks.org/mbostock/3074470">'
+        "bl.ocks.org</a>"
+    )
+
+    @deprecated(deprecated_in="3.0")
+    def query_obj(self) -> QueryObjectDict:
+        query_obj = super().query_obj()
+
+        metrics = self.form_data.get("metrics")
+        query_obj["metrics"] = metrics if isinstance(metrics, list) else [metrics]
+
+        query_obj["groupby"] = [
+            self.form_data.get("all_columns_x"),
+            self.form_data.get("all_columns_y"),
+        ]
+
+        if self.form_data.get("sort_by_metric", False):
+            query_obj["orderby"] = [(query_obj["metrics"][0], False)]
+
+        return query_obj
+
+    @deprecated(deprecated_in="3.0")
+    def get_data(self, df: pd.DataFrame) -> VizData:
+        if df.empty:
+            return None
+
+        x = get_column_name(self.form_data.get("all_columns_x"))  # type: ignore
+        y = get_column_name(self.form_data.get("all_columns_y"))  # type: ignore
+
+        metrics = self.metric_labels
+        v = metrics[0]
+
+        if x == y:
+            df = df[[x, y] + metrics]
+            df.columns = ["x", "y"] + metrics
+        else:
+            df = df[[x, y] + metrics]
+            df.columns = ["x", "y"] + metrics
+
+        if len(metrics) > 1:
+            df['extra_metrics'] = df[metrics[1:]].apply(
+                lambda row: {metric: row[metric] for metric in metrics[1:]}, axis=1)
+            df = df[['x', 'y', v, 'extra_metrics']]
+            df.columns = ['x', 'y', 'v', 'extra_metrics']
+        else:
+            df = df[['x', 'y', v]]
+            df.columns = ['x', 'y', 'v']
+
+        if df['v'].dtype == 'object':
+            unique_vals = sorted(df['v'].unique())
+            mapping = {val: i for i, val in enumerate(unique_vals)}
+            df['v'] = df['v'].map(mapping)
+
+
+        norm = self.form_data.get("normalize_across")
+        overall = False
+        max_ = df.v.max()
+        min_ = df.v.min()
+
+        if norm == "heatmap":
+            overall = True
+        else:
+            gb = df.groupby(norm, group_keys=False)
+            if len(gb) <= 1:
+                overall = True
+            else:
+                df["perc"] = gb.apply(
+                    lambda x: (x.v - x.v.min()) / (x.v.max() - x.v.min())
+                )
+                df["rank"] = gb.apply(lambda x: x.v.rank(pct=True))
+
+        if overall:
+            df["perc"] = (df.v - min_) / (max_ - min_)
+            df["rank"] = df.v.rank(pct=True)
+
+        records = df.to_dict(orient="records")
+
+        data = {
+            "records": records,
+            "extents": [min_, max_],
+            "metrics": metrics
+        }
+
+        return data
+
+
 @deprecated(deprecated_in="3.0")
 def get_subclasses(cls: type[BaseViz]) -> set[type[BaseViz]]:
     return set(cls.__subclasses__()).union(
