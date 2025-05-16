@@ -194,6 +194,7 @@ export default function transformProps(
     xAxisLabelRotation,
     groupby,
     groupbyB,
+    xAxisNumberFormat,
     xAxis: xAxisOrig,
     xAxisForceCategorical,
     xAxisTitle,
@@ -477,10 +478,14 @@ export default function transformProps(
     xAxisDataType === GenericDataType.Temporal
       ? getTooltipTimeFormatter(tooltipTimeFormat)
       : String;
-  const xAxisFormatter =
-    xAxisDataType === GenericDataType.Temporal
-      ? getXAxisFormatter(xAxisTimeFormat)
-      : String;
+  let xAxisFormatter;
+  if (xAxisDataType === GenericDataType.Temporal) {
+    xAxisFormatter = getXAxisFormatter(xAxisTimeFormat);
+  } else if (xAxisDataType === GenericDataType.Numeric) {
+    xAxisFormatter = getNumberFormatter(xAxisNumberFormat);
+  } else {
+    xAxisFormatter = String;
+  }
 
   const addYAxisTitleOffset = !!(yAxisTitle || yAxisTitleSecondary);
   const addXAxisTitleOffset = !!xAxisTitle;

@@ -318,6 +318,7 @@ const config: ControlPanelConfig = {
         ...legendSection,
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
         ['x_axis_time_format'],
+        ['x_axis_number_format'],
         [xAxisLabelRotation],
         ...richTooltipSection,
         // eslint-disable-next-line react/jsx-key
