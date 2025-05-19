@@ -181,8 +181,15 @@ class ExportDashboardsCommand(ExportModelsCommand):
             lambda: ExportDashboardsCommand._file_content(model),
         )
 
+        chart_ids = [chart.id for chart in model.slices]
+        for chart in model.slices:
+            if hasattr(chart, 'params_dict'):
+                for annotation in chart.params_dict.get('annotation_layers', []):
+                    id_slice_orphan = annotation.get("value", -99)
+                    if id_slice_orphan not in chart_ids:
+                        chart_ids.append(id_slice_orphan)
+
         if export_related:
-            chart_ids = [chart.id for chart in model.slices]
             dashboard_ids = model.id
             command = ExportChartsCommand(chart_ids)
             command.disable_tag_export()

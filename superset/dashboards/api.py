@@ -998,6 +998,21 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         """
         requested_ids = kwargs["rison"]
 
+        if is_feature_enabled("VERSIONED_EXPORT"):
+            if len(requested_ids) > 1:
+                resp = make_response('not_allowed', 404)
+                if token:
+                    resp.set_cookie(token, "error: cannot export multiple dashboards at the same time")
+                return resp
+            dashboard_to_export = DashboardDAO.find_by_id(requested_ids[0])
+            if not dashboard_to_export.slug:
+                resp = make_response('not_allowed', 404)
+                if token:
+                    resp.set_cookie(token, "error: missing slug")
+                return resp
+            root = f"{dashboard_to_export.slug}"
+            filename = f"{root}.zip"
+
         timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
         root = f"dashboard_export_{timestamp}"
         filename = f"{root}.zip"
