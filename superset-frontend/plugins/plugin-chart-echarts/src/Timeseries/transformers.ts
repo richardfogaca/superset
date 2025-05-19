@@ -401,68 +401,72 @@ export function transformIntervalAnnotation(
   orientation?: OrientationType,
 ): SeriesOption[] {
   const series: SeriesOption[] = [];
-  const annotations = extractRecordAnnotations(layer, annotationData);
-  annotations.forEach(annotation => {
-    const { name, color, opacity, showLabel } = layer;
-    const { descriptions, intervalEnd, time, title } = annotation;
-    const label = formatAnnotationLabel(name, title, descriptions);
-    const isHorizontal = orientation === OrientationType.Horizontal;
-    const intervalData: (
-      | MarkArea1DDataItemOption
-      | MarkArea2DDataItemOption
-    )[] = [
-      [
-        {
-          name: label,
-          ...(isHorizontal ? { yAxis: time } : { xAxis: time }),
-        },
-        isHorizontal ? { yAxis: intervalEnd } : { xAxis: intervalEnd },
-      ],
-    ];
-    const intervalLabel: SeriesLabelOption = showLabel
-      ? {
-          show: true,
-          color: theme.colors.grayscale.dark2,
-          position: 'insideTop',
-          verticalAlign: 'top',
-          fontWeight: 'bold',
-          // @ts-ignore
-          emphasis: {
-            position: 'insideTop',
-            verticalAlign: 'top',
-            backgroundColor: theme.colors.grayscale.light5,
+  if (Object.keys(annotationData).length > 0) {
+    const annotations = extractRecordAnnotations(layer, annotationData);
+    annotations.forEach(annotation => {
+      const { name, color, opacity, showLabel } = layer;
+      const { descriptions, intervalEnd, time, title } = annotation;
+      const label = formatAnnotationLabel(name, title, descriptions);
+      const isHorizontal = orientation === OrientationType.Horizontal;
+      const intervalData: (
+        | MarkArea1DDataItemOption
+        | MarkArea2DDataItemOption
+      )[] = [
+        [
+          {
+            name: label,
+            ...(isHorizontal ? { yAxis: time } : { xAxis: time }),
           },
-        }
-      : {
-          show: false,
-          color: theme.colors.grayscale.dark2,
-          // @ts-ignore
-          emphasis: {
-            fontWeight: 'bold',
+          isHorizontal ? { yAxis: intervalEnd } : { xAxis: intervalEnd },
+        ],
+      ];
+      const intervalLabel: SeriesLabelOption = showLabel
+        ? {
             show: true,
+            color: theme.colors.grayscale.dark2,
             position: 'insideTop',
             verticalAlign: 'top',
-            backgroundColor: theme.colors.grayscale.light5,
-          },
-        };
-    series.push({
-      id: `Interval - ${label}`,
-      type: 'line',
-      animation: false,
-      markArea: {
-        silent: false,
-        itemStyle: {
-          color: color || colorScale(name, sliceId),
-          opacity: parseAnnotationOpacity(opacity || AnnotationOpacity.Medium),
-          emphasis: {
-            opacity: 0.8,
-          },
-        } as ItemStyleOption,
-        label: intervalLabel,
-        data: intervalData,
-      },
+            fontWeight: 'bold',
+            // @ts-ignore
+            emphasis: {
+              position: 'insideTop',
+              verticalAlign: 'top',
+              backgroundColor: theme.colors.grayscale.light5,
+            },
+          }
+        : {
+            show: false,
+            color: theme.colors.grayscale.dark2,
+            // @ts-ignore
+            emphasis: {
+              fontWeight: 'bold',
+              show: true,
+              position: 'insideTop',
+              verticalAlign: 'top',
+              backgroundColor: theme.colors.grayscale.light5,
+            },
+          };
+      series.push({
+        id: `Interval - ${label}`,
+        type: 'line',
+        animation: false,
+        markArea: {
+          silent: false,
+          itemStyle: {
+            color: color || colorScale(name, sliceId),
+            opacity: parseAnnotationOpacity(
+              opacity || AnnotationOpacity.Medium,
+            ),
+            emphasis: {
+              opacity: 0.8,
+            },
+          } as ItemStyleOption,
+          label: intervalLabel,
+          data: intervalData,
+        },
+      });
     });
-  });
+  }
   return series;
 }
 
@@ -476,68 +480,70 @@ export function transformEventAnnotation(
   orientation?: OrientationType,
 ): SeriesOption[] {
   const series: SeriesOption[] = [];
-  const annotations = extractRecordAnnotations(layer, annotationData);
-  annotations.forEach(annotation => {
-    const { name, color, opacity, style, width, showLabel } = layer;
-    const { descriptions, time, title } = annotation;
-    const label = formatAnnotationLabel(name, title, descriptions);
-    const isHorizontal = orientation === OrientationType.Horizontal;
-    const eventData: MarkLine1DDataItemOption[] = [
-      {
-        name: label,
-        ...(isHorizontal ? { yAxis: time } : { xAxis: time }),
-      },
-    ];
+  if (Object.keys(annotationData).length > 0) {
+    const annotations = extractRecordAnnotations(layer, annotationData);
+    annotations.forEach(annotation => {
+      const { name, color, opacity, style, width, showLabel } = layer;
+      const { descriptions, time, title } = annotation;
+      const label = formatAnnotationLabel(name, title, descriptions);
+      const isHorizontal = orientation === OrientationType.Horizontal;
+      const eventData: MarkLine1DDataItemOption[] = [
+        {
+          name: label,
+          ...(isHorizontal ? { yAxis: time } : { xAxis: time }),
+        },
+      ];
 
-    const lineStyle: LineStyleOption & DefaultStatesMixin['emphasis'] = {
-      width,
-      type: style as ZRLineType,
-      color: color || colorScale(name, sliceId),
-      opacity: parseAnnotationOpacity(opacity),
-      emphasis: {
-        width: width ? width + 1 : width,
-        opacity: 1,
-      },
-    };
+      const lineStyle: LineStyleOption & DefaultStatesMixin['emphasis'] = {
+        width,
+        type: style as ZRLineType,
+        color: color || colorScale(name, sliceId),
+        opacity: parseAnnotationOpacity(opacity),
+        emphasis: {
+          width: width ? width + 1 : width,
+          opacity: 1,
+        },
+      };
 
-    const eventLabel: SeriesLineLabelOption = showLabel
-      ? {
-          show: true,
-          color: theme.colors.grayscale.dark2,
-          position: 'insideEndTop',
-          fontWeight: 'bold',
-          formatter: (params: CallbackDataParams) => params.name,
-          // @ts-ignore
-          emphasis: {
-            backgroundColor: theme.colors.grayscale.light5,
-          },
-        }
-      : {
-          show: false,
-          color: theme.colors.grayscale.dark2,
-          position: 'insideEndTop',
-          // @ts-ignore
-          emphasis: {
-            formatter: (params: CallbackDataParams) => params.name,
-            fontWeight: 'bold',
+      const eventLabel: SeriesLineLabelOption = showLabel
+        ? {
             show: true,
-            backgroundColor: theme.colors.grayscale.light5,
-          },
-        };
+            color: theme.colors.grayscale.dark2,
+            position: 'insideEndTop',
+            fontWeight: 'bold',
+            formatter: (params: CallbackDataParams) => params.name,
+            // @ts-ignore
+            emphasis: {
+              backgroundColor: theme.colors.grayscale.light5,
+            },
+          }
+        : {
+            show: false,
+            color: theme.colors.grayscale.dark2,
+            position: 'insideEndTop',
+            // @ts-ignore
+            emphasis: {
+              formatter: (params: CallbackDataParams) => params.name,
+              fontWeight: 'bold',
+              show: true,
+              backgroundColor: theme.colors.grayscale.light5,
+            },
+          };
 
-    series.push({
-      id: `Event - ${label}`,
-      type: 'line',
-      animation: false,
-      markLine: {
-        silent: false,
-        symbol: 'none',
-        lineStyle,
-        label: eventLabel,
-        data: eventData,
-      },
+      series.push({
+        id: `Event - ${label}`,
+        type: 'line',
+        animation: false,
+        markLine: {
+          silent: false,
+          symbol: 'none',
+          lineStyle,
+          label: eventLabel,
+          data: eventData,
+        },
+      });
     });
-  });
+  }
   return series;
 }
 
@@ -551,30 +557,32 @@ export function transformTimeseriesAnnotation(
   orientation?: OrientationType,
 ): SeriesOption[] {
   const series: SeriesOption[] = [];
-  const { hideLine, name, opacity, showMarkers, style, width, color } = layer;
-  const result = annotationData[name];
-  const isHorizontal = orientation === OrientationType.Horizontal;
-  if (isTimeseriesAnnotationResult(result)) {
-    result.forEach(annotation => {
-      const { key, values } = annotation;
-      series.push({
-        type: 'line',
-        id: key,
-        name: key,
-        data: values.map(({ x, y }) =>
-          isHorizontal
-            ? ([y, x] as [number, OptionName])
-            : ([x, y] as [OptionName, number]),
-        ),
-        symbolSize: showMarkers ? markerSize : 0,
-        lineStyle: {
-          opacity: parseAnnotationOpacity(opacity),
-          type: style as ZRLineType,
-          width: hideLine ? 0 : width,
-          color: color || colorScale(name, sliceId),
-        },
+  if (Object.keys(annotationData).length > 0) {
+    const { hideLine, name, opacity, showMarkers, style, width, color } = layer;
+    const result = annotationData[name];
+    const isHorizontal = orientation === OrientationType.Horizontal;
+    if (isTimeseriesAnnotationResult(result)) {
+      result.forEach(annotation => {
+        const { key, values } = annotation;
+        series.push({
+          type: 'line',
+          id: key,
+          name: key,
+          data: values.map(({ x, y }) =>
+            isHorizontal
+              ? ([y, x] as [number, OptionName])
+              : ([x, y] as [OptionName, number]),
+          ),
+          symbolSize: showMarkers ? markerSize : 0,
+          lineStyle: {
+            opacity: parseAnnotationOpacity(opacity),
+            type: style as ZRLineType,
+            width: hideLine ? 0 : width,
+            color: color || colorScale(name, sliceId),
+          },
+        });
       });
-    });
+    }
   }
   return series;
 }
