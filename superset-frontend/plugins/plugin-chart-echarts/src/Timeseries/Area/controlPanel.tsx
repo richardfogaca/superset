@@ -40,6 +40,7 @@ import {
   truncateXAxis,
   xAxisBounds,
   minorTicks,
+  xAxisForceString,
 } from '../../controls';
 import { AreaChartStackControlOptions } from '../../constants';
 
@@ -184,6 +185,7 @@ const config: ControlPanelConfig = {
         ],
         ...legendSection,
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
+        [xAxisForceString],
         [
           {
             name: 'x_axis_time_format',

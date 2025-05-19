@@ -70,6 +70,28 @@ import {
   TIMESERIES_CONSTANTS,
 } from '../constants';
 
+function formatTotalStackedValues(
+  totalStackedValues: any,
+  xAxisForceString: boolean,
+) {
+  if (
+    Array.isArray(totalStackedValues) &&
+    totalStackedValues.length > 0 &&
+    xAxisForceString
+  ) {
+    const isObjectArray = totalStackedValues.every(
+      item => typeof item === 'object' && 'label' in item,
+    );
+    if (isObjectArray) {
+      return totalStackedValues.map(v => ({
+        value: v.value,
+        label: `${v.label}`,
+      }));
+    }
+  }
+  return totalStackedValues;
+}
+
 // based on weighted wiggle algorithm
 // source: https://ieeexplore.ieee.org/document/4658136
 export const getBaselineSeriesForStream = (
@@ -169,6 +191,7 @@ export function transformSeries(
     queryIndex?: number;
     timeCompare?: string[];
     timeShiftColor?: boolean;
+    xAxisForceString?: boolean;
   },
 ): SeriesOption | undefined {
   const { name } = series;
@@ -198,7 +221,12 @@ export function transformSeries(
     queryIndex = 0,
     timeCompare = [],
     timeShiftColor,
+    xAxisForceString,
   } = opts;
+  const formattedTotalStackedValues = formatTotalStackedValues(
+    totalStackedValues,
+    xAxisForceString ?? false,
+  );
   const contexts = seriesContexts[name || ''] || [];
   const hasForecast =
     contexts.includes(ForecastSeriesEnum.ForecastTrend) ||
@@ -331,10 +359,39 @@ export function transformSeries(
         ) {
           return '';
         }
-        const { value, dataIndex, seriesIndex, seriesName } = params;
+        const { value, dataIndex, seriesIndex, seriesName, seriesId } = params;
         const numericValue = isHorizontal ? value[0] : value[1];
+        const labelValue = isHorizontal ? value[1] : value[0];
         const isSelectedLegend = !legendState || legendState[seriesName];
         const isAreaExpand = stack === StackControlsValue.Expand;
+        let totalValueForIndex = 0;
+        if (formattedTotalStackedValues) {
+          const commaIndex = seriesId?.toString().indexOf(', ');
+          if (formatter && commaIndex !== -1) {
+            const stackName = seriesId?.toString().substring(commaIndex + 2);
+
+            if (
+              showValueIndexes &&
+              seriesIndex === showValueIndexes[stackName]
+            ) {
+              const { value } = formattedTotalStackedValues.find(
+                (item: any) => item.label === labelValue,
+              );
+              totalValueForIndex = value[stackName];
+              return formatter(isAreaExpand ? 1 : totalValueForIndex);
+            }
+          }
+          if (typeof formattedTotalStackedValues[0] === 'number') {
+            totalValueForIndex = formattedTotalStackedValues[
+              dataIndex
+            ] as number;
+          } else {
+            const foundItem = (
+              formattedTotalStackedValues as { value: number; label: string }[]
+            ).find(item => item.label === labelValue);
+            totalValueForIndex = foundItem ? foundItem.value : 0;
+          }
+        }
         if (!formatter) {
           return numericValue;
         }

@@ -350,3 +350,16 @@ export const forceCategorical: ControlSetItem = {
     description: t('Make the x-axis categorical'),
   },
 };
+
+export const xAxisForceString: ControlSetItem = {
+  name: 'xAxisForceString',
+  config: {
+    type: 'CheckboxControl',
+    label: t('Convert labels to string'),
+    default: false,
+    renderTrigger: true,
+    description: t(
+      'Change the X-Axis labels to string. Useful for making annotation data match the x-axis data',
+    ),
+  },
+};

@@ -39,6 +39,7 @@ import {
   showValueSection,
   truncateXAxis,
   xAxisBounds,
+  xAxisForceString,
   xAxisLabelRotation,
 } from '../../../controls';
 
@@ -114,7 +115,7 @@ const config: ControlPanelConfig = {
         [minorTicks],
         ...legendSection,
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
-
+        [xAxisForceString],
         [
           {
             name: 'x_axis_time_format',

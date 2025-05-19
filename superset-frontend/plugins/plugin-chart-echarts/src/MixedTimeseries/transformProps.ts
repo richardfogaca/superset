@@ -96,6 +96,7 @@ import {
   getTooltipTimeFormatter,
   getXAxisFormatter,
   getYAxisFormatter,
+  convertXAxisValuesToString,
 } from '../utils/formatters';
 
 const getFormatter = (
@@ -206,6 +207,7 @@ export default function transformProps(
     percentageThreshold,
     metrics = [],
     metricsB = [],
+    xAxisForceString,
   }: EchartsMixedTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
 
   const refs: Refs = {};
@@ -233,8 +235,11 @@ export default function transformProps(
   });
 
   const dataTypes = getColtypesMapping(queriesData[0]);
+
   const xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
   const xAxisType = getAxisType(stack, xAxisForceCategorical, xAxisDataType);
+  const xForceString = xAxisType !== 'time' && xAxisForceString;
+
   const series: SeriesOption[] = [];
   const formatter = contributionMode
     ? getNumberFormatter(',.0%')
@@ -410,6 +415,7 @@ export default function transformProps(
         totalStackedValues,
         thresholdValues,
         timeShiftColor,
+        xAxisForceString: xForceString,
       },
     );
     if (transformedSeries) series.push(transformedSeries);
@@ -460,6 +466,7 @@ export default function transformProps(
         totalStackedValues: totalStackedValuesB,
         thresholdValues: thresholdValuesB,
         timeShiftColor,
+        xAxisForceString: xForceString,
       },
     );
     if (transformedSeries) series.push(transformedSeries);
@@ -499,6 +506,10 @@ export default function transformProps(
 
   const { setDataMask = () => {}, onContextMenu } = hooks;
   const alignTicks = yAxisIndex !== yAxisIndexB;
+
+  const dedupedSeries = dedupSeries(
+    reorderForecastSeries(series) as SeriesOption[],
+  );
 
   const echartOptions: EChartsCoreOption = {
     useUTC: true,
@@ -664,7 +675,7 @@ export default function transformProps(
         .map(entry => entry.name || '')
         .concat(extractAnnotationLabels(annotationLayers, annotationData)),
     },
-    series: dedupSeries(reorderForecastSeries(series) as SeriesOption[]),
+    series: dedupedSeries,
     toolbox: {
       show: zoomable,
       top: TIMESERIES_CONSTANTS.toolboxTop,
@@ -695,11 +706,20 @@ export default function transformProps(
     focusedSeries = seriesName;
   };
 
+  const convertedStringSeries = xForceString
+    ? convertXAxisValuesToString(dedupedSeries as SeriesOption)
+    : dedupedSeries;
+
+  const echartOptionsUpdated = {
+    ...echartOptions,
+    series: convertedStringSeries,
+  };
+
   return {
     formData,
     width,
     height,
-    echartOptions,
+    echartOptions: echartOptionsUpdated,
     setDataMask,
     emitCrossFilters,
     labelMap,

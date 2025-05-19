@@ -101,6 +101,7 @@ import {
 } from '../constants';
 import { getDefaultTooltip } from '../utils/tooltip';
 import {
+  convertXAxisValuesToString,
   getPercentFormatter,
   getTooltipTimeFormatter,
   getXAxisFormatter,
@@ -190,6 +191,7 @@ export default function transformProps(
     yAxisTitle,
     yAxisTitleMargin,
     yAxisTitlePosition,
+    xAxisForceString,
     zoomable,
   }: EchartsTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
   const refs: Refs = {};
@@ -259,6 +261,7 @@ export default function transformProps(
   const xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
 
   const xAxisType = getAxisType(stack, xAxisForceCategorical, xAxisDataType);
+  const xForceString = xAxisType !== 'time' && xAxisForceString;
   const series: SeriesOption[] = [];
 
   const forcePercentFormatter = Boolean(contributionMode || isAreaExpand);
@@ -328,6 +331,7 @@ export default function transformProps(
         lineStyle,
         timeCompare: array,
         timeShiftColor,
+        xAxisForceString,
       },
     );
     if (transformedSeries) {
@@ -527,6 +531,10 @@ export default function transformProps(
     [padding.bottom, padding.left] = [padding.left, padding.bottom];
   }
 
+  const dedupedSeries = dedupSeries(
+    reorderForecastSeries(series) as SeriesOption[],
+  );
+
   const echartOptions: EChartsCoreOption = {
     useUTC: true,
     grid: {
@@ -624,7 +632,7 @@ export default function transformProps(
       ),
       data: legendData as string[],
     },
-    series: dedupSeries(reorderForecastSeries(series) as SeriesOption[]),
+    series: dedupedSeries,
     toolbox: {
       show: zoomable,
       top: TIMESERIES_CONSTANTS.toolboxTop,
@@ -664,12 +672,21 @@ export default function transformProps(
       : [],
   };
 
+  const convertedStringSeries = xForceString
+    ? convertXAxisValuesToString(dedupedSeries as SeriesOption)
+    : dedupedSeries;
+
+  const echartOptionsUpdated = {
+    ...echartOptions,
+    series: convertedStringSeries,
+  };
+
   const onFocusedSeries = (seriesName: string | null) => {
     focusedSeries = seriesName;
   };
 
   return {
-    echartOptions,
+    echartOptions: echartOptionsUpdated,
     emitCrossFilters,
     formData,
     groupby: groupBy,

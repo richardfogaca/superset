@@ -37,6 +37,7 @@ import {
   richTooltipSection,
   truncateXAxis,
   xAxisBounds,
+  xAxisForceString,
   xAxisLabelRotation,
 } from '../controls';
 
@@ -317,6 +318,7 @@ const config: ControlPanelConfig = {
         [minorTicks],
         ...legendSection,
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
+        [xAxisForceString],
         ['x_axis_time_format'],
         [xAxisLabelRotation],
         ...richTooltipSection,

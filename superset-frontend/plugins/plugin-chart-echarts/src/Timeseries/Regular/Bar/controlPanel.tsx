@@ -37,6 +37,7 @@ import {
   showValueSection,
   truncateXAxis,
   xAxisBounds,
+  xAxisForceString,
   xAxisLabelRotation,
 } from '../../../controls';
 
@@ -336,6 +337,7 @@ const config: ControlPanelConfig = {
         ],
         ...legendSection,
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
+        [xAxisForceString],
         ...createAxisControl('x'),
         [truncateXAxis],
         [xAxisBounds],

@@ -31,6 +31,7 @@ import {
   TimeFormatter,
   ValueFormatter,
 } from '@superset-ui/core';
+import { SeriesOption } from 'echarts';
 
 export const getSmartDateDetailedFormatter = () =>
   getTimeFormatter(SMART_DATE_DETAILED_ID);
@@ -96,4 +97,38 @@ export function getXAxisFormatter(
     return getTimeFormatter(format);
   }
   return String;
+}
+
+export function convertXAxisValuesToString(
+  series: SeriesOption[] | SeriesOption,
+): SeriesOption[] {
+  const seriesArray = Array.isArray(series) ? series : [series];
+  return seriesArray.map((item: SeriesOption) => {
+    const newItem: SeriesOption = {
+      ...item,
+    };
+
+    if (item.markLine?.data) {
+      newItem.markLine = {
+        ...item.markLine,
+        data: item.markLine.data.map(
+          (mark: { xAxis: any; [key: string]: any }) => ({
+            ...mark,
+            xAxis: mark.xAxis.toString(),
+          }),
+        ),
+      };
+    }
+
+    if (Array.isArray(item.data)) {
+      newItem.data = item.data.map((point: any) => [
+        point[0].toString(),
+        point[1],
+      ]);
+    } else {
+      newItem.data = item.data;
+    }
+
+    return newItem;
+  });
 }
