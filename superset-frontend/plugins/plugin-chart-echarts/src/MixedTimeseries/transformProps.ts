@@ -192,6 +192,7 @@ export default function transformProps(
     tooltipSortByMetric,
     xAxisBounds,
     xAxisLabelRotation,
+    xAxisLabelMaxWidth,
     groupby,
     groupbyB,
     xAxis: xAxisOrig,
@@ -514,6 +515,8 @@ export default function transformProps(
       axisLabel: {
         formatter: xAxisFormatter,
         rotate: xAxisLabelRotation,
+        overflow: 'truncate',
+        max: xAxisLabelMaxWidth,
       },
       minorTick: { show: minorTicks },
       minInterval:

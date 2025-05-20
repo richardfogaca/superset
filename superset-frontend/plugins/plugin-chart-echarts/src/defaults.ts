@@ -29,6 +29,7 @@ export const defaultYAxis = {
 
 export const defaultXAxis = {
   xAxisLabelRotation: 0,
+  xAxisLabelMaxSize: 100,
 };
 
 export const defaultLegendPadding = {

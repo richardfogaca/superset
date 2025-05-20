@@ -37,6 +37,7 @@ import {
   showValueSection,
   truncateXAxis,
   xAxisBounds,
+  xAxisLabelMaxWidth,
   xAxisLabelRotation,
 } from '../../../controls';
 
@@ -187,6 +188,7 @@ function createAxisControl(axis: 'x' | 'y'): ControlSetRow[] {
         },
       },
     ],
+    [xAxisLabelMaxWidth],
     [
       {
         name: 'y_axis_format',

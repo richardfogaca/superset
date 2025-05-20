@@ -179,6 +179,7 @@ export default function transformProps(
     xAxisBounds,
     xAxisForceCategorical,
     xAxisLabelRotation,
+    xAxisLabelMaxWidth,
     xAxisSort,
     xAxisSortAsc,
     xAxisTimeFormat,
@@ -483,6 +484,8 @@ export default function transformProps(
       hideOverlap: true,
       formatter: xAxisFormatter,
       rotate: xAxisLabelRotation,
+      overflow: 'truncate',
+      max: xAxisLabelMaxWidth,
     },
     minorTick: { show: minorTicks },
     minInterval:

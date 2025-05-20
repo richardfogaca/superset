@@ -292,6 +292,23 @@ export const xAxisLabelRotation = {
   },
 };
 
+export const xAxisLabelMaxWidth = {
+  name: 'xAxisLabelMaxWidth',
+  config: {
+    type: 'SelectControl',
+    freeForm: true,
+    clearable: false,
+    label: t('Max size x axis label'),
+    choices: [
+      [50, '50 px'],
+      [100, '100 px'],
+    ],
+    default: defaultXAxis.xAxisLabelMaxSize,
+    renderTrigger: true,
+    description: t('Input field supports custom input. e.g. 80 for 80 pts'),
+  },
+};
+
 export const seriesOrderSection: ControlSetRow[] = [
   [<ControlSubSectionHeader>{t('Series Order')}</ControlSubSectionHeader>],
   [sortSeriesType],
