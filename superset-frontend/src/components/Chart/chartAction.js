@@ -297,6 +297,21 @@ export function runAnnotationQuery({
         : undefined;
     }
 
+    const newExtraFilters = [];
+    if (!fd.extra_filters && fd.adhoc_filters) {
+      for (let i = 0; i < fd.adhoc_filters.length; i += 1) {
+        if (fd.adhoc_filters[i].isExtra) {
+          const newExtra = {
+            col: fd.adhoc_filters[i].subject,
+            op: fd.adhoc_filters[i].operator,
+            val: fd.adhoc_filters[i].comparator,
+          };
+          newExtraFilters.push(newExtra);
+        }
+      }
+      sliceFormData.extra_filters = newExtraFilters;
+    }
+
     const url = getAnnotationJsonUrl(annotation.value, force);
     const controller = new AbortController();
     const { signal } = controller;
