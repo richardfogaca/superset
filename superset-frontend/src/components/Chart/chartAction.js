@@ -191,6 +191,33 @@ const v1ChartDataRequest = async (
     allowDomainSharding,
   }).toString();
 
+  if (formData.extra_filters) {
+    payload.form_data.extra_filters = formData.extra_filters;
+  } else {
+    const newExtraFromAdhoc = [];
+    if (formData.adhoc_filters) {
+      for (let i = 0; i < formData.adhoc_filters.length; i += 1) {
+        if (
+          formData.adhoc_filters[i].isExtra ||
+          formData.adhoc_filters[i].isTemporaryFilter
+        ) {
+          const newExtra = {
+            col: formData.adhoc_filters[i].subject,
+            op: formData.adhoc_filters[i].operator,
+            val: formData.adhoc_filters[i].comparator,
+          };
+          newExtraFromAdhoc.push(newExtra);
+        }
+      }
+      payload.form_data.extra_filters = newExtraFromAdhoc;
+      if (payload.form_data.extra_filters) {
+        for (let i = 0; i < payload.form_data.extra_filters.length; i += 1) {
+          delete payload.form_data.extra_filters[i].isTemporaryFilter;
+        }
+      }
+    }
+  }
+
   const querySettings = {
     ...requestParams,
     url,

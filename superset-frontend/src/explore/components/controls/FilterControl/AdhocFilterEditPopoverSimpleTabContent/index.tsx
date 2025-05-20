@@ -19,7 +19,7 @@
 import { FC, ChangeEvent, useEffect, useState } from 'react';
 
 import FormItem from 'src/components/Form/FormItem';
-import { Select } from 'src/components';
+import { AutoComplete, Select } from 'src/components';
 import {
   isFeatureEnabled,
   FeatureFlag,
@@ -104,6 +104,7 @@ export interface Props {
   partitionColumn: string;
   operators?: Operators[];
   validHandler: (isValid: boolean) => void;
+  isTemporaryFilter?: boolean;
 }
 
 export interface AdvancedDataTypesState {
@@ -162,6 +163,9 @@ export const useSimpleTabFilterProps = (props: Props) => {
     } else if (option?.label) {
       subject = option.label;
       clause = Clauses.Having;
+    } else if (!option && props.isTemporaryFilter) {
+      subject = id;
+      clause = Clauses.Where;
     }
     let { operator, operatorId, comparator } = props.adhocFilter;
     operator =
@@ -329,9 +333,11 @@ const AdhocFilterEditPopoverSimpleTabContent: FC<Props> = props => {
     ariaLabel: t('Select subject'),
     value: subject ?? undefined,
     onChange: handleSubjectChange,
-    notFoundContent: t(
-      'No such column found. To filter on a metric, try the Custom SQL tab.',
-    ),
+    notFoundContent: props.isTemporaryFilter
+      ? undefined
+      : t(
+          'No such column found. To filter on a metric, try the Custom SQL tab.',
+        ),
     autoFocus: !subject,
     placeholder: '',
   };
@@ -340,6 +346,9 @@ const AdhocFilterEditPopoverSimpleTabContent: FC<Props> = props => {
     props.adhocFilter.clause === Clauses.Where
       ? t('%s column(s)', columns.length)
       : t('To filter on a metric, use Custom SQL tab.');
+  subjectSelectProps.placeholder = props.isTemporaryFilter
+    ? 'Type a value here'
+    : subjectSelectProps.placeholder;
   columns = props.options.filter(
     option => 'column_name' in option && option.column_name,
   );
@@ -357,8 +366,9 @@ const AdhocFilterEditPopoverSimpleTabContent: FC<Props> = props => {
     ariaLabel: t('Select operator'),
   };
 
-  const shouldFocusComparator =
-    !!subjectSelectProps.value && !!operatorSelectProps.value;
+  const shouldFocusComparator = props.isTemporaryFilter
+    ? false
+    : !!subjectSelectProps.value && !!operatorSelectProps.value;
 
   const comparatorSelectProps = {
     allowClear: true,
@@ -450,15 +460,10 @@ const AdhocFilterEditPopoverSimpleTabContent: FC<Props> = props => {
     }
   }, [props.adhocFilter.comparator]);
 
-  // another name for columns, just for following previous naming.
-  const subjectComponent = (
-    <Select
-      css={(theme: SupersetTheme) => ({
-        marginTop: theme.gridUnit * 4,
-        marginBottom: theme.gridUnit * 4,
-      })}
-      data-test="select-element"
-      options={columns.map(column => ({
+  const SelectComponent = props.isTemporaryFilter ? AutoComplete : Select;
+  const selectOptions = props.isTemporaryFilter
+    ? []
+    : columns.map(column => ({
         value:
           ('column_name' in column && column.column_name) ||
           ('optionName' in column && column.optionName) ||
@@ -472,7 +477,18 @@ const AdhocFilterEditPopoverSimpleTabContent: FC<Props> = props => {
           ('optionName' in column && column.optionName) ||
           undefined,
         customLabel: renderSubjectOptionLabel(column),
-      }))}
+      }));
+
+  // another name for columns, just for following previous naming.
+  const subjectComponent = (
+    <SelectComponent
+      css={(theme: SupersetTheme) => ({
+        marginTop: theme.gridUnit * 4,
+        marginBottom: theme.gridUnit * 4,
+        width: props.isTemporaryFilter ? '100%' : undefined,
+      })}
+      data-test="select-element"
+      options={selectOptions}
       {...subjectSelectProps}
     />
   );

@@ -46,6 +46,12 @@ export default function DndAdhocFilterOption({
   index,
 }: DndAdhocFilterOptionProps) {
   const { actualTimeRange, title } = useGetTimeRangeLabel(adhocFilter);
+  const temporaryFilterWarning = adhocFilter.isTemporaryFilter
+    ? 'This is an Ephemeral filter, any changes made on this filter will not be saved to the chart.'
+    : undefined;
+  const warningMessage = adhocFilter.datasourceWarning
+    ? t('This filter might be incompatible with current dataset')
+    : temporaryFilterWarning;
 
   return (
     <AdhocFilterPopoverTrigger
@@ -66,11 +72,7 @@ export default function DndAdhocFilterOption({
         type={DndItemType.FilterOption}
         withCaret
         isExtra={adhocFilter.isExtra}
-        datasourceWarningMessage={
-          adhocFilter.datasourceWarning
-            ? t('This filter might be incompatible with current dataset')
-            : undefined
-        }
+        datasourceWarningMessage={warningMessage}
       />
     </AdhocFilterPopoverTrigger>
   );
