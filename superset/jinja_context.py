@@ -290,7 +290,7 @@ class ExtraCache:
             val = flt.get("val")
             if isinstance(val, list):
                 return_val.extend(val)
-            elif val:
+            elif val is not None:
                 return_val.append(val)
 
         if (not return_val) and default:
@@ -378,7 +378,7 @@ class ExtraCache:
                 flt.get("expressionType") == "SIMPLE"
                 and flt.get("clause") == "WHERE"
                 and flt.get("subject") == column
-                and val
+                and val is not None
             ):
                 if remove_filter:
                     if column not in self.removed_filters:
@@ -717,6 +717,7 @@ class JinjaTemplateProcessor(BaseTemplateProcessor):
                 "filter_values": partial(safe_proxy, extra_cache.filter_values),
                 "get_filters": partial(safe_proxy, extra_cache.get_filters),
                 "dataset": partial(safe_proxy, dataset_macro_with_context),
+                "dataset_custom": partial(safe_proxy, dataset_macro_custom),
                 "get_time_filter": partial(safe_proxy, extra_cache.get_time_filter),
             }
         )
@@ -891,7 +892,7 @@ def dataset_macro(
     # pylint: disable=import-outside-toplevel
     from superset.daos.dataset import DatasetDAO
 
-    dataset = DatasetDAO.find_by_id(dataset_id)
+    dataset = DatasetDAO.get_dataset_by_name(dataset_name)
     if not dataset:
         raise DatasetNotFoundError(f"Dataset {dataset_id} not found!")
 
@@ -908,6 +909,62 @@ def dataset_macro(
     sqla_query = dataset.get_query_str_extended(query_obj, mutate=False)
     sql = sqla_query.sql
     return f"(\n{sql}\n) AS dataset_{dataset_id}"
+
+
+def dataset_macro_custom(
+    dataset_name: str,
+    include_metrics: bool = False,
+    columns: Optional[list[str]] = None,
+    unwrap_child: bool = False,
+    unwrap_grandchild: bool = False,
+    dataset_alias: bool = False,
+) -> str:
+    """
+    Given a dataset ID, return the SQL that represents it.
+
+    The generated SQL includes all columns (including computed) by default. Optionally
+    the user can also request metrics to be included, and columns to group by.
+    """
+    # pylint: disable=import-outside-toplevel
+    from superset.daos.dataset import DatasetDAO
+
+    dataset = DatasetDAO.get_dataset_by_name(dataset_name)
+    if not dataset:
+        raise DatasetNotFoundError(f"Dataset {dataset_name} not found!")
+
+    columns = columns or [column.column_name for column in dataset.columns]
+
+    if unwrap_child | unwrap_grandchild:
+        include_metrics = False
+    if unwrap_grandchild:
+        columns = [col.column_name for col in dataset.columns if not col.data['expression']]
+
+    metrics = [metric.metric_name for metric in dataset.metrics]
+    query_obj = {
+        "is_timeseries": False,
+        "filter": [],
+        "metrics": metrics if include_metrics else None,
+        "columns": columns,
+    }
+    sqla_query = dataset.get_query_str_extended(query_obj)
+    sql = sqla_query.sql
+
+    dataset_alias_string = f"dataset_{dataset.id}"
+    if dataset_alias:
+        dataset_alias_string = f"{dataset_alias}"
+
+    return_statement = f"({sql}) AS {dataset_alias_string}"
+    if unwrap_child:
+        return_statement = f"{sql}"
+    if unwrap_grandchild:
+        re_expression_start = r"(?i)\bFROM\b\s*(.*)"
+        re_expression_end = r"^(.*)\) AS virtual_table"
+        sql = re.findall(re_expression_start, sql, re.S)[0]
+        sql = re.findall(re_expression_end, sql, re.S)[0]
+        sql = re.sub(r"^(\s*)\(", r"\1", sql)
+        return_statement = f"{sql}"
+
+    return return_statement
 
 
 def get_dataset_id_from_context(metric_key: str) -> int:
