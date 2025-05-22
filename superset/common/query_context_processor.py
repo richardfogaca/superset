@@ -396,6 +396,43 @@ class QueryContextProcessor:
                 lambda row: self.generate_join_column(row, 0, time_grain, time_offset),
                 axis=1,
             )
+    
+    def create_empty_df_with_matching_dtypes(self, reference_df: pd.DataFrame,
+                                             join_keys: list[str],
+                                             metrics_mapping: dict) -> pd.DataFrame:
+        dtypes = reference_df.dtypes.to_dict()
+        data = {}
+
+        for col in join_keys + list(metrics_mapping.values()):
+            dtype = dtypes.get(col, float)
+            if np.issubdtype(dtype, np.datetime64):
+                data[col] = [pd.NaT]  # Use NaT for missing datetime values
+            else:
+                data[col] = [np.NaN]
+
+        return pd.DataFrame(data)
+    
+    def align_dtypes(self, df1: pd.DataFrame, df2: pd.DataFrame, join_keys: List[str]):
+        for key in join_keys:
+            # Handle NaT values in datetime columns
+            if (
+                pd.api.types.is_datetime64_any_dtype(df1[key]) or
+                pd.api.types.is_datetime64_any_dtype(df2[key])
+            ):
+                df1[key] = pd.to_datetime(df1[key], errors='coerce')
+                df2[key] = pd.to_datetime(df2[key], errors='coerce')
+            elif df1[key].dtype != df2[key].dtype:
+                # Convert to string if types don't match
+                df1[key] = df1[key].astype(str)
+                df2[key] = df2[key].astype(str)
+            elif df1[key].dtype == df2[key].dtype and pd.api.types.is_object_dtype(df1[key]):
+                try:
+                    df1[key] = pd.to_datetime(df1[key])
+                    df2[key] = pd.to_datetime(df2[key])
+                except:
+                    pass
+
+        return df1, df2
 
     def is_valid_date(self, date_string: str) -> bool:
         try:
@@ -442,13 +479,19 @@ class QueryContextProcessor:
         offset_dfs: dict[str, pd.DataFrame] = {}
 
         outer_from_dttm, outer_to_dttm = get_since_until_from_query_object(query_object)
-        if not outer_from_dttm or not outer_to_dttm:
-            raise QueryObjectValidationError(
-                _(
-                    "An enclosed time range (both start and end) must be specified "
-                    "when using a Time Comparison."
+        
+        time_offsets = query_object.time_offsets
+        x_axis_chart = any(("x-axis" in el or "offset" in el) for el in time_offsets)
+        no_time_selected_by_user = query_object.from_dttm == query_object.to_dttm
+
+        if not x_axis_chart and not no_time_selected_by_user:
+            if not outer_from_dttm or not outer_to_dttm:
+                raise QueryObjectValidationError(
+                    _(
+                        "An enclosed time range (both start and end) must be specified "
+                        "when using a Time Comparison."
+                    )
                 )
-            )
 
         time_grain = self.get_time_grain(query_object)
 
@@ -569,12 +612,8 @@ class QueryContextProcessor:
 
             offset_metrics_df = result.df
             if offset_metrics_df.empty:
-                offset_metrics_df = pd.DataFrame(
-                    {
-                        col: [np.NaN]
-                        for col in join_keys + list(metrics_mapping.values())
-                    }
-                )
+                offset_metrics_df = self.create_empty_df_with_matching_dtypes(
+                    df, join_keys, metrics_mapping)
             else:
                 # 1. normalize df, set dttm column
                 offset_metrics_df = self.normalize_df(
@@ -654,6 +693,12 @@ class QueryContextProcessor:
                 # so we use the join column instead of the temporal column
                 actual_join_keys = [column_name, *join_keys[1:]]
 
+            # Remove rows where all join keys are NaN
+            offset_df = offset_df.dropna(subset=actual_join_keys, how='all')
+            
+            # Align the dtypes of the two dataframes
+            df, offset_df = self.align_dtypes(df, offset_df, actual_join_keys)
+            
             if join_keys:
                 df = dataframe_utils.left_join_df(
                     left_df=df,
