@@ -28,6 +28,94 @@ from superset.utils import json
 from superset.utils.core import AnnotationType, get_user
 
 
+def update_annotations(configs, session, old_chart_ids):
+    # update annotation id
+    for file_name, config in configs.items():
+        if file_name.startswith("charts/"):
+            performing_import = False
+            if "annotation_layers" in config['params']:
+                config["params"] = json.loads(config["params"])
+                for annotation_layer in config["params"]['annotation_layers']:
+                    if annotation_layer['value'] in old_chart_ids and \
+                        annotation_layer['sourceType'] != 'NATIVE':
+                        performing_import = True
+                        annotation_layer['value'] = old_chart_ids[annotation_layer['value']]
+
+                # add time series annotation query context
+                if config.get('query_context', None):
+                    config['query_context'] = json.loads(config['query_context'])
+                    # to fix: attribut with string NULL; e.g. query_context: 'null'
+                    if config['query_context'] and config['query_context']['queries']:
+                        for query in config['query_context']['queries']:
+                            if 'annotation_layers' in query:
+                                for annotation_layer in query['annotation_layers']:
+                                    if annotation_layer['value'] in old_chart_ids and \
+                                        annotation_layer['sourceType'] != 'NATIVE':
+                                        performing_import = True
+                                        annotation_layer['value'] = old_chart_ids[
+                                            annotation_layer['value']]
+
+                    config['query_context'] = json.dumps(config['query_context'])
+
+                if performing_import:
+                    import_chart(session, config, overwrite=True)
+                    
+
+def update_chart_configuration_with_new_ids(dashboard_config, chart_id_mapping):
+    chart_configuration = dashboard_config.get("metadata", {}).get("chart_configuration", {})
+    updated_chart_configuration = {}
+
+    for old_chart_id, chart_content in chart_configuration.items():
+        chart_content["id"] = chart_id_mapping[int(old_chart_id)]
+        cross_filter_scope = chart_content.get("crossFilters", {}).get("scope", {})
+
+        if isinstance(cross_filter_scope, str) or len(cross_filter_scope) == 0:
+            continue
+
+        old_excluded_chart_ids = cross_filter_scope.get("excluded", [])
+        new_excluded_chart_ids = []
+
+        for old_excluded_id in old_excluded_chart_ids:
+            if old_excluded_id in chart_id_mapping:
+                new_excluded_chart_ids.append(chart_id_mapping[old_excluded_id])
+
+        if len(old_excluded_chart_ids) > 0:
+            chart_content["crossFilters"]["scope"]["excluded"] = new_excluded_chart_ids
+
+        updated_chart_configuration[str(chart_id_mapping[int(old_chart_id)])] = chart_content
+
+    if chart_configuration:
+        dashboard_config["metadata"]["chart_configuration"] = updated_chart_configuration
+
+    filter_sets_config = dashboard_config.get("metadata", {}).get(
+        "filter_sets_configuration", [])
+
+    for filter_set_config in filter_sets_config:
+        native_filters = filter_set_config.get("nativeFilters", {})
+
+        for filter_name, filter_content in native_filters.items():
+            old_excluded_chart_ids = filter_content.get("scope", {}).get("excluded", [])
+            new_excluded_chart_ids = []
+
+            for old_excluded_id in old_excluded_chart_ids:
+                if old_excluded_id in chart_id_mapping:
+                    new_excluded_chart_ids.append(chart_id_mapping[old_excluded_id])
+
+            if len(old_excluded_chart_ids) > 0:
+                filter_content["scope"]["excluded"] = new_excluded_chart_ids
+
+            old_charts_in_scope = filter_content.get("chartsInScope", [])
+            new_charts_in_scope = []
+
+            for old_chart_in_scope in old_charts_in_scope:
+
+                if old_chart_in_scope in chart_id_mapping:
+                    new_charts_in_scope.append(chart_id_mapping[old_chart_in_scope])
+
+            if old_charts_in_scope:
+                filter_content["chartsInScope"] = new_charts_in_scope
+
+
 def filter_chart_annotations(chart_config: dict[str, Any]) -> None:
     """
     Mutating the chart's config params to keep only the annotations of
