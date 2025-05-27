@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   AxisType,
   BinaryQueryObjectFilterClause,
@@ -28,8 +28,15 @@ import {
 } from '@superset-ui/core';
 import { EchartsMixedTimeseriesChartTransformedProps } from './types';
 import Echart from '../components/Echart';
-import { EventHandlers } from '../types';
+import { EventHandlers, EchartsHandler, SeriesItem } from '../types';
 import { formatSeriesName } from '../utils/series';
+import {
+  formatSeriesScatterPlots,
+  shouldParseSeriesScatterPlots,
+  shouldRecalculateYAxis,
+  formatYAxis,
+} from './utils';
+import { useDeepCompareEffect } from './hooks';
 
 export default function EchartsMixedTimeseries({
   height,
@@ -51,6 +58,7 @@ export default function EchartsMixedTimeseries({
   refs,
   coltypeMapping,
 }: EchartsMixedTimeseriesChartTransformedProps) {
+  const chartRef = useRef<EchartsHandler | null>(null);
   const isFirstQuery = useCallback(
     (seriesIndex: number) => seriesIndex < seriesBreakdown,
     [seriesBreakdown],
@@ -131,6 +139,20 @@ export default function EchartsMixedTimeseries({
     ],
   );
 
+  const handleScatterConfigChange = () => {
+    const echartInstance = chartRef.current?.getEchartInstance();
+    if (!echartInstance) {
+      return;
+    }
+    const currentOptions = echartInstance.getOption();
+    const applyFix = shouldParseSeriesScatterPlots(currentOptions);
+
+    if (applyFix) {
+      const newSeries = formatSeriesScatterPlots(currentOptions, width);
+      echartInstance.setOption({ series: newSeries });
+    }
+  };
+
   const eventHandlers: EventHandlers = {
     click: props => {
       const { seriesName, seriesIndex } = props;
@@ -207,7 +229,28 @@ export default function EchartsMixedTimeseries({
         });
       }
     },
+    legendselectchanged: handleScatterConfigChange,
+    datazoom: handleScatterConfigChange,
   };
+
+  useDeepCompareEffect(() => {
+    const echartInstance = chartRef.current?.getEchartInstance();
+    if (!echartInstance) return;
+
+    const options = echartInstance.getOption();
+    const applyYIndexFix = shouldRecalculateYAxis(
+      options.series as SeriesItem[],
+    );
+
+    if (applyYIndexFix) {
+      const yAxis = formatYAxis(echartOptions);
+      const formattedOptions = {
+        ...options,
+        yAxis,
+      };
+      echartInstance.setOption(formattedOptions);
+    }
+  }, [echartOptions.yAxis]);
 
   return (
     <Echart
@@ -217,6 +260,7 @@ export default function EchartsMixedTimeseries({
       echartOptions={echartOptions}
       eventHandlers={eventHandlers}
       selectedValues={selectedValues}
+      ref={chartRef}
     />
   );
 }
