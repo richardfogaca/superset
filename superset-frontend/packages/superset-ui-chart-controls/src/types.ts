@@ -518,6 +518,8 @@ export enum SortSeriesType {
   Min = 'min',
   Sum = 'sum',
   Avg = 'avg',
+  Met = 'metric',
+  MaxAbs = 'max_abs',
 }
 
 export type LegendPaddingType = {
