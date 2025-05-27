@@ -39,6 +39,23 @@ def left_join_df(
     df.reset_index(inplace=True)
     return df
 
+def outer_join_df(
+    left_df: pd.DataFrame,
+    right_df: pd.DataFrame,
+    join_keys: list[str],
+    lsuffix: str = "",
+    rsuffix: str = "",
+) -> pd.DataFrame:
+    left_df = left_df.sort_values(join_keys)
+    right_df = right_df.sort_values(join_keys)
+    return pd.merge_asof(
+        left_df,
+        right_df,
+        on=join_keys,
+        direction='nearest',
+        suffixes=(lsuffix, rsuffix)
+    )
+
 
 def full_outer_join_df(
     left_df: pd.DataFrame,

@@ -664,7 +664,7 @@ class QueryContextProcessor:
         """
         join_column_producer = config["TIME_GRAIN_JOIN_COLUMN_PRODUCERS"].get(
             time_grain
-        )
+      )
 
         if join_column_producer and not time_grain:
             raise QueryObjectValidationError(
