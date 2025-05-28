@@ -65,6 +65,8 @@ import {
   extractTooltipKeys,
   getAxisType,
   getColtypesMapping,
+  getInferredAxisDataType,
+  getInferredAxisType,
   getLegendProps,
   getMinAndMaxFromBounds,
   getOverMaxHiddenFormatter,
@@ -233,8 +235,10 @@ export default function transformProps(
   });
 
   const dataTypes = getColtypesMapping(queriesData[0]);
-  const xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
-  const xAxisType = getAxisType(stack, xAxisForceCategorical, xAxisDataType);
+
+  let xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
+  let xAxisType = getAxisType(stack, xAxisForceCategorical, xAxisDataType);
+
   const series: SeriesOption[] = [];
   const formatter = contributionMode
     ? getNumberFormatter(',.0%')
@@ -472,6 +476,19 @@ export default function transformProps(
     if (minSecondary === undefined) minSecondary = 0;
     if (maxSecondary === undefined) maxSecondary = 1;
   }
+
+  xAxisType = getInferredAxisType({
+    dataType: xAxisDataType,
+    formData,
+    xAxisLabel,
+    data: data1,
+    seriesType,
+    dataB: data2,
+    stack,
+    seriesTypeB,
+    stackB,
+  });
+  xAxisDataType = getInferredAxisDataType(xAxisType);
 
   const tooltipFormatter =
     xAxisDataType === GenericDataType.Temporal
