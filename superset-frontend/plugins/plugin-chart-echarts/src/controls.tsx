@@ -142,6 +142,23 @@ export const onlyTotalControl: ControlSetItem = {
   },
 };
 
+export const showTotalsByBarControl: ControlSetItem = {
+  name: 'show_totals_by_bar',
+  config: {
+    type: 'CheckboxControl',
+    label: t('Totals by bar'),
+    default: false,
+    renderTrigger: true,
+    description: t(
+      'Show the total value by stacked bar (not grouped by the category)',
+    ),
+    visibility: ({ controls }: ControlPanelsContainerProps) =>
+      Boolean(controls?.show_value?.value) &&
+      controls?.stack?.value === 'Stack' &&
+      Boolean(controls?.only_total?.value),
+  },
+};
+
 export const percentageThresholdControl: ControlSetItem = {
   name: 'percentage_threshold',
   config: {

@@ -160,6 +160,46 @@ export const getBaselineSeriesForStream = (
   };
 };
 
+export type DataRecordValue =
+  | number
+  | string
+  | boolean
+  | Date
+  | null
+  | bigint
+  | undefined;
+
+type TotalStackedValues =
+  | number[]
+  | { value: number; label: string }[]
+  | { value: {}; label: DataRecordValue }[];
+
+function formatTotalStackedValues(
+  totalStackedValues: TotalStackedValues,
+  xAxisForceString: boolean,
+) {
+  if (
+    Array.isArray(totalStackedValues) &&
+    totalStackedValues.length > 0 &&
+    xAxisForceString
+  ) {
+    // @ts-ignore
+    const isObjectArray = totalStackedValues.every(
+      // @ts-ignore
+      item => typeof item === 'object' && 'label' in item,
+    );
+    if (isObjectArray) {
+      return totalStackedValues.map(v => ({
+        // @ts-ignore
+        value: v.value,
+        // @ts-ignore
+        label: `${v.label}`,
+      }));
+    }
+  }
+  return totalStackedValues;
+}
+
 export function transformSeries(
   series: SeriesOption,
   colorScale: CategoricalColorScale,
@@ -192,6 +232,7 @@ export function transformSeries(
     timeCompare?: string[];
     timeShiftColor?: boolean;
     xAxisForceString?: boolean;
+    showTotalsByBar?: boolean;
   },
 ): SeriesOption | undefined {
   const { name } = series;

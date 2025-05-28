@@ -32,6 +32,7 @@ import { DEFAULT_FORM_DATA, TIME_SERIES_DESCRIPTION_TEXT } from '../constants';
 import {
   legendSection,
   onlyTotalControl,
+  showTotalsByBarControl,
   showValueControl,
   richTooltipSection,
   seriesOrderSection,
@@ -121,6 +122,7 @@ const config: ControlPanelConfig = {
           },
         ],
         [onlyTotalControl],
+        [showTotalsByBarControl],
         [percentageThresholdControl],
         [
           {

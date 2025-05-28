@@ -162,6 +162,7 @@ export default function transformProps(
     richTooltip,
     seriesType,
     showLegend,
+    showTotalsByBar,
     showValue,
     sliceId,
     sortSeriesType,
@@ -225,6 +226,7 @@ export default function transformProps(
       percentageThreshold,
       xAxisCol: xAxisLabel,
       legendState,
+      showTotalsByBar,
     },
   );
   const extraMetricLabels = extractExtraMetrics(chartProps.rawFormData).map(
@@ -240,6 +242,7 @@ export default function transformProps(
       xAxis: xAxisLabel,
       extraMetricLabels,
       stack,
+      // @ts-ignore
       totalStackedValues,
       isHorizontal,
       sortSeriesType,
@@ -253,6 +256,7 @@ export default function transformProps(
     onlyTotal,
     isHorizontal,
     legendState,
+    showTotalsByBar,
   });
   const seriesContexts = extractForecastSeriesContexts(
     rawSeries.map(series => series.name as string),
@@ -332,6 +336,7 @@ export default function transformProps(
         timeCompare: array,
         timeShiftColor,
         xAxisForceString,
+        showTotalsByBar,
       },
     );
     if (transformedSeries) {
