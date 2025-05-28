@@ -299,6 +299,23 @@ const config: ControlPanelConfig = {
       expanded: true,
       controlSetRows: [
         ['color_scheme'],
+        [
+          {
+            name: `separate_stacks`,
+            config: {
+              type: 'CheckboxControl',
+              label: t('Separate bar stacks'),
+              renderTrigger: true,
+              default: false,
+              description: t('Separate stacked bars from queries A and B.'),
+              visibility: ({ controls }) =>
+                !!controls.stack.value &&
+                !!controls.stackB.value &&
+                controls.seriesType.value === 'bar' &&
+                controls.seriesTypeB.value === 'bar',
+            },
+          },
+        ],
         ['time_shift_color'],
         ...createCustomizeSection(t('Query A'), ''),
         ...createCustomizeSection(t('Query B'), 'B'),

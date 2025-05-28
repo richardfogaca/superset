@@ -203,6 +203,7 @@ export default function transformProps(
     xAxisTitleMargin,
     yAxisTitleMargin,
     yAxisTitlePosition,
+    separateStacks,
     sliceId,
     timeGrainSqla,
     percentageThreshold,
@@ -414,6 +415,8 @@ export default function transformProps(
         totalStackedValues,
         thresholdValues,
         timeShiftColor,
+        separateStacks,
+        seriesOrigin: 'A',
       },
     );
     if (transformedSeries) series.push(transformedSeries);
@@ -464,6 +467,8 @@ export default function transformProps(
         totalStackedValues: totalStackedValuesB,
         thresholdValues: thresholdValuesB,
         timeShiftColor,
+        separateStacks,
+        seriesOrigin: 'B',
       },
     );
     if (transformedSeries) series.push(transformedSeries);
