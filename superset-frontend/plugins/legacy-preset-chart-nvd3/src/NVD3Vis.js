@@ -500,6 +500,31 @@ function nvd3Vis(element, props) {
       chart.xScale(d3.scale.log());
     }
 
+    const applyXAxisBounds = () => {
+      if (
+        chart.xDomain &&
+        Array.isArray(xAxisBounds) &&
+        xAxisBounds.length === 2
+      ) {
+        const [customMin, customMax] = xAxisBounds;
+        const hasCustomMin = isDefined(customMin) && !Number.isNaN(customMin);
+        const hasCustomMax = isDefined(customMax) && !Number.isNaN(customMax);
+        if (hasCustomMin && hasCustomMax) {
+          // Override the y domain if there's both a custom min and max
+          chart.xDomain([customMin, customMax]);
+          chart.clipEdge(true);
+        } else {
+          let [trueMin, trueMax] = [0, 1];
+          [trueMin, trueMax] = computeXDomain(data);
+          const min = hasCustomMin ? customMin : trueMin;
+          const max = hasCustomMax ? customMax : trueMax;
+          chart.xDomain([min, max]);
+          chart.clipEdge(true);
+        }
+      }
+    };
+    applyXAxisBounds();
+
     let xAxisFormatter;
     if (isTimeSeries) {
       xAxisFormatter = getTimeFormatter(xAxisFormat);
@@ -1034,6 +1059,23 @@ function nvd3Vis(element, props) {
           ).style('stroke-width', 0);
         });
       }
+    }
+
+    if (vizType === 'bubble') {
+      const colorFn = getScale(colorScheme);
+      const secondLevel = new Set();
+      data.forEach(d => {
+        d.values.forEach(v => {
+          secondLevel.add(v[entity]);
+        });
+      });
+      secondLevel.forEach(item => {
+        svg
+          .selectAll('.nv-point')
+          .filter(f => f[0][entity] === item)
+          .style('stroke', colorFn(cleanColorInput(item), sliceId))
+          .style('stroke-width', 2);
+      });
     }
 
     wrapTooltip(chart);
