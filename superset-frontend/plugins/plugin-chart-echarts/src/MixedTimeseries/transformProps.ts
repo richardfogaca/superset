@@ -66,6 +66,7 @@ import {
   getAxisType,
   getColtypesMapping,
   getLegendProps,
+  getMetricNames,
   getMinAndMaxFromBounds,
   getOverMaxHiddenFormatter,
 } from '../utils/series';
@@ -242,6 +243,8 @@ export default function transformProps(
   const MetricDisplayNameA = getMetricDisplayName(metrics[0], verboseMap);
   const MetricDisplayNameB = getMetricDisplayName(metricsB[0], verboseMap);
 
+  const metricNames = getMetricNames(metrics, verboseMap);
+
   const [rawSeriesA, sortedTotalValuesA] = extractSeries(rebasedDataA, {
     fillNeighborValue: stack ? 0 : undefined,
     xAxis: xAxisLabel,
@@ -249,6 +252,7 @@ export default function transformProps(
     sortSeriesAscending,
     stack,
     totalStackedValues,
+    metricNames,
   });
   const rebasedDataB = rebaseForecastDatum(data2, verboseMap);
   const {
@@ -259,6 +263,8 @@ export default function transformProps(
     percentageThreshold,
     xAxisCol: xAxisLabel,
   });
+
+  const metricNamesB = getMetricNames(metricsB, verboseMap);
   const [rawSeriesB, sortedTotalValuesB] = extractSeries(rebasedDataB, {
     fillNeighborValue: stackB ? 0 : undefined,
     xAxis: xAxisLabel,
@@ -266,6 +272,7 @@ export default function transformProps(
     sortSeriesAscending: sortSeriesAscendingB,
     stack: Boolean(stackB),
     totalStackedValues: totalStackedValuesB,
+    metricNames: metricNamesB,
   });
 
   const dataTypes = getColtypesMapping(queriesData[0]);

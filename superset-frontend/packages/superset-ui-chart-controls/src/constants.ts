@@ -73,6 +73,8 @@ export const SORT_SERIES_CHOICES = [
   [SortSeriesType.Min, t('Minimum value')],
   [SortSeriesType.Max, t('Maximum value')],
   [SortSeriesType.Avg, t('Average value')],
+  [SortSeriesType.Met, t('Metrics order')],
+  [SortSeriesType.MaxAbs, t('Max absolute value')],
 ];
 
 export const DEFAULT_XAXIS_SORT_SERIES_DATA: SortSeriesData = {

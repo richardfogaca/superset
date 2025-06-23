@@ -68,6 +68,7 @@ import {
   getAxisType,
   getColtypesMapping,
   getLegendProps,
+  getMetricNames,
   getMinAndMaxFromBounds,
 } from '../utils/series';
 import {
@@ -234,6 +235,8 @@ export default function transformProps(
 
   const isMultiSeries = groupBy.length || metrics?.length > 1;
 
+  const metricNames = getMetricNames(metrics, verboseMap);
+
   const [rawSeries, sortedTotalValues, minPositiveValue] = extractSeries(
     rebasedData,
     {
@@ -247,6 +250,7 @@ export default function transformProps(
       sortSeriesAscending,
       xAxisSortSeries: isMultiSeries ? xAxisSort : undefined,
       xAxisSortSeriesAscending: isMultiSeries ? xAxisSortAsc : undefined,
+      metricNames,
     },
   );
   const showValueIndexes = extractShowValueIndexes(rawSeries, {
