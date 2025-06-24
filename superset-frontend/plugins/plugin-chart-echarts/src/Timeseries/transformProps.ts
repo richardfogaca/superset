@@ -71,6 +71,7 @@ import {
   getLegendProps,
   getMinAndMaxFromBounds,
   updateLabelPosition,
+  getMinInterval,
 } from '../utils/series';
 import {
   extractAnnotationLabels,
@@ -201,6 +202,7 @@ export default function transformProps(
     zoomable,
     stackDimension,
     labelPosition,
+    xAxisMinInterval,
   }: EchartsTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
   const refs: Refs = {};
   const groupBy = ensureIsArray(groupby);
@@ -526,12 +528,7 @@ export default function transformProps(
       interval: xAxisLabelInterval,
     },
     minorTick: { show: minorTicks },
-    minInterval:
-      xAxisType === AxisType.Time && timeGrainSqla
-        ? TIMEGRAIN_TO_TIMESTAMP[
-            timeGrainSqla as keyof typeof TIMEGRAIN_TO_TIMESTAMP
-          ]
-        : 0,
+    minInterval: getMinInterval({ xAxisType, timeGrainSqla, xAxisMinInterval }),
     ...getMinAndMaxFromBounds(
       xAxisType,
       truncateXAxis,

@@ -408,6 +408,17 @@ const config: ControlPanelConfig = {
         ],
 >>>>>>> update-label-position
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
+        [
+          {
+            name: 'xAxisMinInterval',
+            config: {
+              type: 'TextControl',
+              label: t('Min Interval'),
+              renderTrigger: true,
+              description: t('Change the X-axis minimum interval.'),
+            },
+          },
+        ],
         ...createAxisControl('x'),
         [truncateXAxis],
         [xAxisBounds],
