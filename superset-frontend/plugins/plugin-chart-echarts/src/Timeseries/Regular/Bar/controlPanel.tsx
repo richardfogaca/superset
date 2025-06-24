@@ -56,6 +56,8 @@ const {
   yAxisBounds,
   zoomable,
   orientation,
+  showSecondaryXAxis,
+  showSecondaryYAxis,
 } = DEFAULT_FORM_DATA;
 
 function createAxisTitleControl(axis: 'x' | 'y'): ControlSetRow[] {
@@ -420,6 +422,18 @@ const config: ControlPanelConfig = {
           },
         ],
         ...createAxisControl('x'),
+        [
+          {
+            name: 'showSecondaryXAxis',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Show Secondary X Axis'),
+              default: showSecondaryXAxis,
+              renderTrigger: true,
+              description: t('Show Secondary X Axis.'),
+            },
+          },
+        ],
         [truncateXAxis],
         [xAxisBounds],
         ...richTooltipSection,
