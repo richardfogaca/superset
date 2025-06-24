@@ -22,10 +22,6 @@ import utc from 'dayjs/plugin/utc';
 import {
   getTimeFormatter,
   getTimeFormatterForGranularity,
-  isAdhocMetricSimple,
-  isSavedMetric,
-  Metric,
-  QueryFormMetric,
   SMART_DATE_ID,
   TimeGranularity,
 } from '@superset-ui/core';
@@ -52,42 +48,60 @@ export const getDateFormatter = (
     ? getTimeFormatterForGranularity(granularity)
     : getTimeFormatter(timeFormat ?? fallbackFormat);
 
-export function getOriginalLabel(
-  metric: QueryFormMetric,
-  metrics: Metric[] = [],
-): string {
-  const metricLabel = typeof metric === 'string' ? metric : metric.label || '';
 
-  if (isSavedMetric(metric)) {
-    const metricEntry = metrics.find(m => m.metric_name === metric);
-    return (
-      metricEntry?.verbose_name ||
-      metricEntry?.metric_name ||
-      metric ||
-      'Unknown Metric'
-    );
+function getVariableData(
+  calculationType: string,
+  data: Record<string, any>[],
+  metricName: string,
+) {
+  if (!data[0]?.hasOwnProperty(metricName)) return null;
+  if (calculationType === 'last') return data[data.length - 1][metricName];
+  if (calculationType === 'first') return data[0][metricName];
+  if (calculationType === 'sum') {
+    return data.reduce((acc, item) => acc + item[metricName], 0);
   }
-
-  if (isAdhocMetricSimple(metric)) {
-    const column = metric.column || {};
-    const columnName = column.column_name || 'unknown_column';
-    const verboseName = column.verbose_name || columnName;
-    const aggregate = metric.aggregate || 'UNKNOWN';
-    return metric.hasCustomLabel && metric.label
-      ? metric.label
-      : `${aggregate}(${verboseName})`;
+  if (calculationType === 'average') {
+    return data.reduce((acc, item) => acc + item[metricName], 0) / data.length;
   }
-
-  if (
-    typeof metric === 'object' &&
-    'expressionType' in metric &&
-    metric.expressionType === 'SQL' &&
-    'sqlExpression' in metric
-  ) {
-    return metric.hasCustomLabel && metric.label
-      ? metric.label
-      : metricLabel || 'Custom Metric';
+  if (calculationType === 'max') {
+    return Math.max(...data.map(item => item[metricName]));
   }
+  if (calculationType === 'min') {
+    return Math.min(...data.map(item => item[metricName]));
+  }
+  return null;
+}
+// Get the metric name in the variable pattern: {{ metric name }}
+function getVariableMetric(content: string) {
+  const variableRegex = /\{\{\s*(.*?)\s*\}\}/;
+  const match = content.match(variableRegex);
+  if (!match) return null;
+  return match[1];
+}
 
-  return metricLabel || 'Unknown Metric';
+function replaceVariableInContent(content: string, value: number) {
+  return content.replace(/\{\{\s*.*?\s*\}\}/, value.toString());
+}
+
+export function replacePlaceholderWithValue({
+  variableCalculation,
+  data,
+  content,
+  numberFormatter,
+}: {
+  variableCalculation: string;
+  data: Record<string, any>[];
+  content: string;
+  numberFormatter: Function;
+}) {
+  const metricName = getVariableMetric(content);
+
+  if (metricName) {
+    const value = getVariableData(variableCalculation, data, metricName);
+    const formattedValue = numberFormatter(value);
+    if (formattedValue !== null) {
+      return replaceVariableInContent(content, formattedValue);
+    }
+  }
+  return content;
 }

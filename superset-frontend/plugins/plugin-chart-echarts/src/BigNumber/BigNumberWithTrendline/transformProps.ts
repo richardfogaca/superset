@@ -35,9 +35,10 @@ import {
   BigNumberWithTrendlineChartProps,
   TimeSeriesDatum,
 } from '../types';
-import { getDateFormatter, parseMetricValue, getOriginalLabel } from '../utils';
+import { getDateFormatter, parseMetricValue } from '../utils';
 import { getDefaultTooltip } from '../../utils/tooltip';
 import { Refs } from '../../types';
+import { replacePlaceholderWithValue } from '../utils';
 
 const formatPercentChange = getNumberFormatter(
   NumberFormats.PERCENT_SIGNED_1_POINT,
@@ -61,23 +62,28 @@ export default function transformProps(
     colorPicker,
     compareLag: compareLag_,
     compareSuffix = '',
+    comparisonType = '',
+    comparisonFormat = '',
     timeFormat,
-    metricNameFontSize,
     headerFontSize,
     metric = 'value',
     showTimestamp,
     showTrendLine,
-    subtitle = '',
-    subtitleFontSize,
     aggregation,
     startYAxisAtZero,
     subheader = '',
     subheaderFontSize,
+    prefix = '',
+    topheader = '',
+    topheaderFontSize,
     forceTimestampFormatting,
     yAxisFormat,
     currencyFormat,
     timeRangeFixed,
+    variableCalculation,
   } = formData;
+  const formatAbsoluteChange = getNumberFormatter(comparisonFormat);
+  const formatLastValue = getNumberFormatter(comparisonFormat);
   const granularity = extractTimegrain(rawFormData);
   const {
     data = [],
@@ -97,11 +103,12 @@ export default function transformProps(
   const aggregatedData = hasAggregatedData ? aggregatedQueryData.data[0] : null;
   const refs: Refs = {};
   const metricName = getMetricLabel(metric);
-  const metrics = chartProps.datasource?.metrics || [];
-  const originalLabel = getOriginalLabel(metric, metrics);
-  const showMetricName = chartProps.rawFormData?.show_metric_name ?? false;
   const compareLag = Number(compareLag_) || 0;
   let formattedSubheader = subheader;
+  const formattedTopheader = topheader;
+  const formattedPrefix = prefix;
+  let newTopheader = formattedTopheader;
+  let newSubheader = formattedSubheader;
 
   const { r, g, b } = colorPicker;
   const mainColor = `rgb(${r}, ${g}, ${b})`;
@@ -109,6 +116,8 @@ export default function transformProps(
   const xAxisLabel = getXAxisLabel(rawFormData) as string;
   let trendLineData: TimeSeriesDatum[] | undefined;
   let percentChange = 0;
+  let absoluteChange = 0;
+  let lastValue = 0;
   let bigNumber = data.length === 0 ? null : data[0][metricName];
   let timestamp = data.length === 0 ? null : data[0][xAxisLabel];
   let bigNumberFallback = null;
@@ -157,17 +166,32 @@ export default function transformProps(
   if (compareLag > 0 && sortedData.length > 0) {
     const compareIndex = compareLag;
     if (compareIndex < sortedData.length) {
-      const compareFromValue = sortedData[compareIndex][1];
-      const compareToValue = sortedData[0][1];
+      const compareValue = sortedData[compareIndex][1];
       // compare values must both be non-nulls
-      if (compareToValue !== null && compareFromValue !== null) {
-        percentChange = compareFromValue
-          ? (Number(compareToValue) - compareFromValue) /
-            Math.abs(compareFromValue)
-          : 0;
-        formattedSubheader = `${formatPercentChange(
-          percentChange,
-        )} ${compareSuffix}`;
+      if (bigNumber !== null && compareValue !== null) {
+       if (comparisonType === 'percentage') {
+          percentChange = compareValue
+          // @ts-ignore
+            ? (bigNumber - compareValue) / Math.abs(compareValue)
+            : 0;
+          formattedSubheader = `${formatPercentChange(
+            percentChange,
+          )} ${compareSuffix}`;
+        }
+        if (comparisonType === 'difference') {
+          // @ts-ignore
+          absoluteChange = compareValue ? bigNumber - compareValue : 0;
+          formattedSubheader = `${
+            absoluteChange > 0 ? '+' : ''
+          }${formatAbsoluteChange(absoluteChange)}
+          ${compareSuffix}`;
+        }
+        if (comparisonType === 'values') {
+          lastValue = compareValue;
+          formattedSubheader = `${formatLastValue(
+            lastValue,
+          )} ${compareSuffix}`;
+        }
       }
     }
   }
@@ -177,6 +201,19 @@ export default function transformProps(
     // @ts-ignore
     trendLineData = showTrendLine ? reversedData : undefined;
   }
+
+  newTopheader = replacePlaceholderWithValue({
+    variableCalculation,
+    data,
+    content: formattedTopheader,
+    numberFormatter: getNumberFormatter(comparisonFormat),
+  });
+  newSubheader = replacePlaceholderWithValue({
+    variableCalculation,
+    data,
+    content: formattedSubheader,
+    numberFormatter: getNumberFormatter(comparisonFormat),
+  });
 
   let className = '';
   if (percentChange > 0) {
@@ -206,7 +243,7 @@ export default function transformProps(
     metric,
     currencyFormats,
     columnFormats,
-    metricEntry?.d3format || yAxisFormat,
+    yAxisFormat,
     currencyFormat,
   );
 
@@ -309,18 +346,16 @@ export default function transformProps(
     headerFormatter,
     formatTime,
     formData,
-    metricName: originalLabel,
-    showMetricName,
-    metricNameFontSize,
     headerFontSize,
-    subtitleFontSize,
-    subtitle,
     subheaderFontSize,
+    topheaderFontSize,
+    topheader: newTopheader,
+    prefix: formattedPrefix,
     mainColor,
     showTimestamp,
     showTrendLine,
     startYAxisAtZero,
-    subheader: formattedSubheader,
+    subheader: newSubheader,
     timestamp,
     trendLineData,
     echartOptions,
