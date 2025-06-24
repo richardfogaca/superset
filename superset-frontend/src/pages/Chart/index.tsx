@@ -153,6 +153,14 @@ export default function ExplorePage() {
                   dashboardContextFormData,
                 )
               : result.form_data;
+          const priorityLabelColors = result.form_data?.label_colors || {};
+          // @ts-ignore
+          const labelColors = formData?.label_colors || {};
+          // @ts-ignore
+          formData.label_colors = {
+            ...labelColors,
+            ...priorityLabelColors,
+          };
           dispatch(
             hydrateExplore({
               ...result,
