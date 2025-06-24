@@ -39,6 +39,7 @@ import {
   xAxisBounds,
   xAxisLabelRotation,
   xAxisLabelInterval,
+  legendSortControl,
 } from '../../../controls';
 
 import { OrientationType } from '../../types';
@@ -381,6 +382,7 @@ const config: ControlPanelConfig = {
           },
         ],
         ...legendSection,
+        [legendSortControl],
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
         ...createAxisControl('x'),
         [truncateXAxis],

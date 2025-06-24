@@ -96,12 +96,44 @@ const legendOrientationControl: ControlSetItem = {
   },
 };
 
+export const legendSortControl: ControlSetItem = {
+  name: 'legendSort',
+  config: {
+    type: 'SelectControl',
+    freeForm: false,
+    label: t('Sort Legend'),
+    choices: [
+      ['asc', t('Ascending')],
+      ['desc', t('Descending')],
+    ],
+    default: 'asc',
+    renderTrigger: true,
+    description: t('Sort the legend items'),
+    visibility: ({ controls }: ControlPanelsContainerProps) =>
+      Boolean(controls?.show_legend?.value),
+  },
+};
+
+const showAnnotationLabelsFirstControl: ControlSetItem = {
+  name: 'annotationLabelsFirst',
+  config: {
+    type: 'CheckboxControl',
+    label: t('Show Annotation Labels First'),
+    default: true,
+    renderTrigger: true,
+    description: t('Display annotation labels first on the legend area'),
+    visibility: ({ controls }: ControlPanelsContainerProps) =>
+      Boolean(controls?.show_legend?.value),
+  },
+};
+
 export const legendSection: ControlSetRow[] = [
   [<ControlSubSectionHeader>{t('Legend')}</ControlSubSectionHeader>],
   [showLegendControl],
   [legendTypeControl],
   [legendOrientationControl],
   [legendMarginControl],
+  [showAnnotationLabelsFirstControl],
 ];
 
 export const showValueControl: ControlSetItem = {

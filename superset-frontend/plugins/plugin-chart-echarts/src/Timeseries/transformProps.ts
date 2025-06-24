@@ -106,6 +106,7 @@ import {
   getXAxisFormatter,
   getYAxisFormatter,
 } from '../utils/formatters';
+import { sortLegendData } from './utils';
 
 export default function transformProps(
   chartProps: EchartsTimeseriesChartProps,
@@ -149,6 +150,8 @@ export default function transformProps(
     legendOrientation,
     legendType,
     legendMargin,
+    legendSort,
+    showAnnotationLabelsFirst,
     logAxis,
     markerEnabled,
     markerSize,
@@ -280,6 +283,8 @@ export default function transformProps(
     currencyFormat,
   );
 
+  const legendNames: string[] = [];
+
   const array = ensureIsArray(chartProps.rawFormData?.time_compare);
   const inverted = invert(verboseMap);
 
@@ -370,6 +375,11 @@ export default function transformProps(
       };
     },
     {},
+  );
+
+  const annotationLabels = extractAnnotationLabels(
+    annotationLayers,
+    annotationData,
   );
 
   annotationLayers
@@ -491,14 +501,15 @@ export default function transformProps(
     isHorizontal,
   );
 
-  const legendData = rawSeries
-    .filter(
-      entry =>
-        extractForecastSeriesContext(entry.name || '').type ===
-        ForecastSeriesEnum.Observation,
-    )
-    .map(entry => entry.name || '')
-    .concat(extractAnnotationLabels(annotationLayers, annotationData));
+  const legendData = sortLegendData({
+    legendNames,
+    annotationLabels,
+    rawSeries,
+    annotationLabelsFirst: showAnnotationLabelsFirst ?? true,
+    legendSort: legendSort ?? 'asc',
+    extractForecastSeriesContext,
+    ForecastSeriesEnum,
+  });
 
   let xAxis: any = {
     type: xAxisType,
