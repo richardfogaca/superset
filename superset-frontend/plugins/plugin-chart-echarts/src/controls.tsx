@@ -142,6 +142,17 @@ export const onlyTotalControl: ControlSetItem = {
   },
 };
 
+export const removeNullValuesControl: ControlSetItem = {
+  name: 'remove_null_values',
+  config: {
+    type: 'CheckboxControl',
+    label: t('Remove Null Values'),
+    renderTrigger: true,
+    default: false,
+    description: t('Whether to remove null values.'),
+  },
+};
+
 export const percentageThresholdControl: ControlSetItem = {
   name: 'percentage_threshold',
   config: {

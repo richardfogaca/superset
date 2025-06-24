@@ -348,6 +348,13 @@ def get_since_until(  # pylint: disable=too-many-arguments,too-many-locals,too-m
     _relative_start = relative_start if relative_start else "today"
     _relative_end = relative_end if relative_end else "today"
 
+    adjust_until_time = False
+    if time_range and (
+        (time_range.lower().startswith('last') and time_range.lower() != 'last day')
+        or time_range.lower().startswith('previous')
+    ):
+        adjust_until_time = True
+
     if time_range == NO_TIME_RANGE or time_range == _(NO_TIME_RANGE):
         return None, None
 
@@ -525,6 +532,9 @@ def get_since_until(  # pylint: disable=too-many-arguments,too-many-locals,too-m
 
     if _since and _until and _since > _until:
         raise ValueError(_("From date cannot be larger than to date"))
+    
+    if adjust_until_time and _until:
+        _until = end_of_day(_until)
 
     return _since, _until
 
@@ -792,3 +802,9 @@ class DateRangeMigration:  # pylint: disable=too-few-public-methods
         r'"time_range":\s*".*\s:\s*[0-9]+\s+(day|week|month|quarter|year)s?\s*"'
     )
     x_dateunit = r"^\s*[0-9]+\s+(day|week|month|quarter|year)s?\s*$"
+
+
+def end_of_day(dt: datetime) -> datetime:
+    """Return the end of the given day (23:59:59)."""
+    return dt.replace(hour=23, minute=59, second=59, microsecond=0)
+
