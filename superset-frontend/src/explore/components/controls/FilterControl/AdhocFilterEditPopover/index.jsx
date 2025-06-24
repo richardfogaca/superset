@@ -32,6 +32,7 @@ import {
   POPOVER_INITIAL_HEIGHT,
   POPOVER_INITIAL_WIDTH,
 } from 'src/explore/constants';
+import CheckboxControl from '../../CheckboxControl';
 import { ExpressionTypes } from '../types';
 
 const propTypes = {
@@ -97,6 +98,7 @@ export default class AdhocFilterEditPopover extends Component {
     this.setSimpleTabIsValid = this.setSimpleTabIsValid.bind(this);
     this.adjustHeight = this.adjustHeight.bind(this);
     this.onTabChange = this.onTabChange.bind(this);
+    this.onTemporaryFilterChange = this.onTemporaryFilterChange.bind(this);
 
     this.state = {
       adhocFilter: this.props.adhocFilter,
@@ -104,6 +106,7 @@ export default class AdhocFilterEditPopover extends Component {
       height: POPOVER_INITIAL_HEIGHT,
       activeKey: this.props?.adhocFilter?.expressionType || 'SIMPLE',
       isSimpleTabValid: true,
+      temporaryFilterChanged: false,
     };
 
     this.popoverContentRef = createRef();
@@ -129,6 +132,7 @@ export default class AdhocFilterEditPopover extends Component {
   onSave() {
     this.props.onChange(this.state.adhocFilter);
     this.props.onClose();
+    this.setState({ temporaryFilterChanged: false });
   }
 
   onDragDown(e) {
@@ -163,6 +167,15 @@ export default class AdhocFilterEditPopover extends Component {
     });
   }
 
+  onTemporaryFilterChange() {
+    this.onAdhocFilterChange(
+      this.state.adhocFilter.duplicateWith({
+        isTemporaryFilter: !this.state.adhocFilter.isTemporaryFilter,
+      }),
+    );
+    this.setState({ temporaryFilterChanged: true });
+  }
+
   adjustHeight(heightDifference) {
     this.setState(state => ({ height: state.height + heightDifference }));
   }
@@ -185,7 +198,9 @@ export default class AdhocFilterEditPopover extends Component {
     const { adhocFilter } = this.state;
     const stateIsValid = adhocFilter.isValid();
     const hasUnsavedChanges =
-      requireSave || !adhocFilter.equals(propsAdhocFilter);
+      this.state.temporaryFilterChanged ||
+      requireSave ||
+      !adhocFilter.equals(propsAdhocFilter);
 
     return (
       <FilterPopoverContentContainer
@@ -202,43 +217,57 @@ export default class AdhocFilterEditPopover extends Component {
           style={{ minHeight: this.state.height, width: this.state.width }}
           allowOverflow
           onChange={this.onTabChange}
-          items={[
-            {
-              key: ExpressionTypes.Simple,
-              label: t('Simple'),
-              children: (
-                <ErrorBoundary>
-                  <AdhocFilterEditPopoverSimpleTabContent
-                    operators={operators}
-                    adhocFilter={this.state.adhocFilter}
-                    onChange={this.onAdhocFilterChange}
-                    options={options}
-                    datasource={datasource}
-                    onHeightChange={this.adjustHeight}
-                    partitionColumn={partitionColumn}
-                    popoverRef={this.popoverContentRef.current}
-                    validHandler={this.setSimpleTabIsValid}
-                  />
-                </ErrorBoundary>
-              ),
-            },
-            {
-              key: ExpressionTypes.Sql,
-              label: t('Custom SQL'),
-              children: (
-                <ErrorBoundary>
-                  <AdhocFilterEditPopoverSqlTabContent
-                    adhocFilter={this.state.adhocFilter}
-                    onChange={this.onAdhocFilterChange}
-                    options={this.props.options}
-                    height={this.state.height}
-                    activeKey={this.state.activeKey}
-                  />
-                </ErrorBoundary>
-              ),
-            },
-          ]}
-        />
+        >
+          <Tabs.TabPane
+            className="adhoc-filter-edit-tab"
+            key={ExpressionTypes.Simple}
+            tab={t('Simple')}
+          >
+            <ErrorBoundary>
+              <div>
+                <CheckboxControl
+                  name="temporary-filter"
+                  label={t('Temporary filter')}
+                  value={this.state.adhocFilter.isTemporaryFilter}
+                  hovered
+                  description={t(
+                    'Use this filter whether it exists or not in the metadata. This filter will not be persisted after the chart is saved.',
+                  )}
+                  onChange={this.onTemporaryFilterChange}
+                />
+              </div>
+              <AdhocFilterEditPopoverSimpleTabContent
+                operators={operators}
+                adhocFilter={this.state.adhocFilter}
+                onChange={this.onAdhocFilterChange}
+                options={options}
+                datasource={datasource}
+                onHeightChange={this.adjustHeight}
+                partitionColumn={partitionColumn}
+                popoverRef={this.popoverContentRef.current}
+                validHandler={this.setSimpleTabIsValid}
+                isTemporaryFilter={this.state.adhocFilter.isTemporaryFilter}
+              />
+            </ErrorBoundary>
+          </Tabs.TabPane>
+          {!this.state.adhocFilter.isTemporaryFilter && (
+            <Tabs.TabPane
+              className="adhoc-filter-edit-tab"
+              key={ExpressionTypes.Sql}
+              tab={t('Custom SQL')}
+            >
+              <ErrorBoundary>
+                <AdhocFilterEditPopoverSqlTabContent
+                  adhocFilter={this.state.adhocFilter}
+                  onChange={this.onAdhocFilterChange}
+                  options={this.props.options}
+                  height={this.state.height}
+                  activeKey={this.state.activeKey}
+                />
+              </ErrorBoundary>
+            </Tabs.TabPane>
+          )}
+        </Tabs>
         <FilterActionsContainer>
           <Button
             buttonStyle="secondary"
