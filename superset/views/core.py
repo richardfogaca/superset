@@ -497,6 +497,9 @@ class Superset(BaseSupersetView):
         utils.convert_legacy_filters_into_adhoc(form_data)
         utils.merge_extra_filters(form_data)
 
+        if request.method == "GET":
+            utils.merge_explore_extra_filters(form_data, request.args)
+
         # merge request url params
         if request.method == "GET":
             utils.merge_request_params(form_data, request.args)

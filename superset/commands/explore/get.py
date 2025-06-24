@@ -135,6 +135,8 @@ class GetExploreCommand(BaseCommand, ABC):
         utils.merge_extra_filters(form_data)
         utils.merge_request_params(form_data, request.args)
 
+        utils.merge_explore_extra_filters(form_data, request.args)
+
         # TODO: this is a dummy placeholder - should be refactored to being just `None`
         datasource_data: dict[str, Any] = {
             "type": self._datasource_type,
