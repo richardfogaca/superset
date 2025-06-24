@@ -39,7 +39,6 @@ import {
   VizType,
   BinaryQueryObjectFilterClause,
   QueryFormData,
-  useTheme,
 } from '@superset-ui/core';
 import { useSelector } from 'react-redux';
 import { Menu } from '@superset-ui/core/components/Menu';
@@ -324,8 +323,6 @@ const SliceHeaderControls = (
     ? t('Exit fullscreen')
     : t('Enter fullscreen');
 
-  const theme = useTheme();
-
   // @z-index-below-dashboard-header (100) - 1 = 99 for !isFullSize and 101 for isFullSize
   const dropdownOverlayStyle = {
     zIndex: isFullSize ? 101 : 99,
@@ -446,7 +443,7 @@ const SliceHeaderControls = (
           addDangerToast={addDangerToast}
           title={t('Share')}
           latestQueryFormData={props.formData}
-          maxWidth={`${theme.gridUnit * 100}px`}
+          maxWidth={`${theme.sizeUnit * 100}px`}
         />
       )}
 

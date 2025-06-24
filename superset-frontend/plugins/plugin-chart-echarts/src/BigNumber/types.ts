@@ -85,9 +85,9 @@ export type BigNumberVizProps = {
   subtitle: string;
   subheaderFontSize: number;
   subtitleFontSize: number;
-  topheader: string;
-  prefix: string;
-  topheaderFontSize: number;
+  topheader?: string;
+  prefix?: string;
+  topheaderFontSize?: number;
   showTimestamp?: boolean;
   showTrendLine?: boolean;
   startYAxisAtZero?: boolean;

@@ -375,7 +375,7 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
             )}
             {this.renderTopheader(
               Math.ceil(
-                topheaderFontSize * (1 - PROPORTION.TRENDLINE) * height,
+                (topheaderFontSize || 0) * (1 - PROPORTION.TRENDLINE) * height,
               ),
             )}
             {this.renderHeaderWithPrefix(
@@ -396,7 +396,7 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
       <div className={className} style={{ height }}>
         {this.renderFallbackWarning()}
         {this.renderKicker((kickerFontSize || 0) * height)}
-        {this.renderTopheader(Math.ceil(topheaderFontSize * height))}
+        {this.renderTopheader(Math.ceil((topheaderFontSize || 0) * height))}
         {this.renderHeaderWithPrefix(Math.ceil(headerFontSize * height))}
         {this.renderSubheader(Math.ceil(subheaderFontSize * height))}
       </div>
@@ -406,7 +406,7 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
 
 export default styled(BigNumberVis)`
   ${({ theme }) => `
-    font-family: ${theme.typography.families.sansSerif};
+    font-family: ${theme.fontFamily};
     position: relative;
     display: flex;
     flex-direction: column;
@@ -427,11 +427,11 @@ export default styled(BigNumberVis)`
       justify-content: center;
       align-items: flex-start;
       .alert {
-        font-size: ${theme.typography.sizes.s};
+        font-size: ${theme.fontSizeSM};
         margin: -0.5em 0 0.4em;
         line-height: 1;
-        padding: ${theme.gridUnit}px;
-        border-radius: ${theme.gridUnit}px;
+        padding: ${theme.sizeUnit}px;
+        border-radius: ${theme.sizeUnit}px;
       }
     }
 
@@ -448,7 +448,7 @@ export default styled(BigNumberVis)`
       position: relative;
       line-height: 1em;
       white-space: nowrap;
-      margin-bottom:${theme.gridUnit * 2}px;
+      margin-bottom:${theme.sizeUnit * 2}px;
       span {
         position: absolute;
         bottom: 0;
@@ -462,12 +462,9 @@ export default styled(BigNumberVis)`
 
     &.is-fallback-value {
       .kicker,
-      .topheader-line {
-        opacity: ${theme.opacity.mediumHeavy};
-      },
       .header-line,
       .subheader-line {
-        opacity: ${theme.opacity.mediumHeavy};
+        opacity: 60%;
       }
     }
   `}
