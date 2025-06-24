@@ -83,7 +83,7 @@ const isControlValueCompatibleWithDatasource = (
         column.column_name === (value as SimpleAdhocFilter).subject,
     );
   }
-  if (isAdhocMetricSQL(value)) {
+  if (isAdhocMetricSQL(value) || isAdhocMetricSimple(value)) {
     Object.assign(value, { datasourceWarning: true });
     return true;
   }
