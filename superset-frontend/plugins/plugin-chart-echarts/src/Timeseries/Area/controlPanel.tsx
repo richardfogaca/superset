@@ -32,6 +32,7 @@ import { DEFAULT_FORM_DATA, TIME_SERIES_DESCRIPTION_TEXT } from '../constants';
 import {
   legendSection,
   onlyTotalControl,
+  showTotalsByBarControl,
   showValueControl,
   richTooltipSection,
   seriesOrderSection,
@@ -43,6 +44,7 @@ import {
   minorTicks,
   legendSortControl,
   xAxisLabelMaxWidth,
+  xAxisForceString,
 } from '../../controls';
 import { AreaChartStackControlOptions } from '../../constants';
 
@@ -123,6 +125,7 @@ const config: ControlPanelConfig = {
           },
         ],
         [onlyTotalControl],
+        [showTotalsByBarControl],
         [percentageThresholdControl],
         [
           {
@@ -188,6 +191,7 @@ const config: ControlPanelConfig = {
         ...legendSection,
         [legendSortControl],
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
+        [xAxisForceString],
         [
           {
             name: 'x_axis_time_format',
@@ -199,11 +203,8 @@ const config: ControlPanelConfig = {
           },
         ],
         [xAxisLabelRotation],
-<<<<<<< HEAD
         [xAxisLabelInterval],
-=======
         [xAxisLabelMaxWidth],
->>>>>>> max-size-x-axis-labels
         ...richTooltipSection,
         // eslint-disable-next-line react/jsx-key
         [<ControlSubSectionHeader>{t('Y Axis')}</ControlSubSectionHeader>],

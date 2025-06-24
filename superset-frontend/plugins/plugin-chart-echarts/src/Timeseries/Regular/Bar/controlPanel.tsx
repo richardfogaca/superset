@@ -38,6 +38,7 @@ import {
   truncateXAxis,
   xAxisBounds,
   xAxisLabelMaxWidth,
+  xAxisForceString,
   xAxisLabelRotation,
   xAxisLabelInterval,
   legendSortControl,
@@ -386,9 +387,7 @@ const config: ControlPanelConfig = {
           },
         ],
         ...legendSection,
-<<<<<<< HEAD
         [legendSortControl],
-=======
         [<ControlSubSectionHeader>{t('Label')}</ControlSubSectionHeader>],
         [
           {
@@ -410,7 +409,6 @@ const config: ControlPanelConfig = {
             },
           },
         ],
->>>>>>> update-label-position
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
         [
           {
@@ -423,6 +421,7 @@ const config: ControlPanelConfig = {
             },
           },
         ],
+        [xAxisForceString],
         ...createAxisControl('x'),
         [
           {

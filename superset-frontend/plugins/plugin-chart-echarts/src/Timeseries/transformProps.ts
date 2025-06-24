@@ -106,6 +106,7 @@ import {
 } from '../constants';
 import { getDefaultTooltip } from '../utils/tooltip';
 import {
+  convertXAxisValuesToString,
   getPercentFormatter,
   getTooltipTimeFormatter,
   getXAxisFormatter,
@@ -173,6 +174,7 @@ export default function transformProps(
     showLegend,
     showSecondaryXAxis,
     showSecondaryYAxis,
+    showTotalsByBar,
     showValue,
     sliceId,
     sortSeriesType,
@@ -204,6 +206,7 @@ export default function transformProps(
     yAxisTitle,
     yAxisTitleMargin,
     yAxisTitlePosition,
+    xAxisForceString,
     zoomable,
     stackDimension,
     labelPosition,
@@ -240,6 +243,7 @@ export default function transformProps(
       percentageThreshold,
       xAxisCol: xAxisLabel,
       legendState,
+      showTotalsByBar,
     },
   );
   const extraMetricLabels = extractExtraMetrics(chartProps.rawFormData).map(
@@ -255,6 +259,7 @@ export default function transformProps(
       xAxis: xAxisLabel,
       extraMetricLabels,
       stack,
+      // @ts-ignore
       totalStackedValues,
       isHorizontal,
       sortSeriesType,
@@ -268,6 +273,7 @@ export default function transformProps(
     onlyTotal,
     isHorizontal,
     legendState,
+    showTotalsByBar,
   });
   const seriesContexts = extractForecastSeriesContexts(
     rawSeries.map(series => series.name as string),
@@ -276,6 +282,7 @@ export default function transformProps(
   const xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
 
   const xAxisType = getAxisType(stack, xAxisForceCategorical, xAxisDataType);
+  const xForceString = xAxisType !== 'time' && xAxisForceString;
   const series: SeriesOption[] = [];
 
   const forcePercentFormatter = Boolean(contributionMode || isAreaExpand);
@@ -347,6 +354,8 @@ export default function transformProps(
         lineStyle,
         timeCompare: array,
         timeShiftColor,
+        xAxisForceString,
+        showTotalsByBar,
       },
     );
     if (transformedSeries) {
@@ -586,6 +595,10 @@ export default function transformProps(
     [padding.bottom, padding.left] = [padding.left, padding.bottom];
   }
 
+  const dedupedSeries = dedupSeries(
+    reorderForecastSeries(series) as SeriesOption[],
+  );
+
   const echartOptions: EChartsCoreOption = {
     useUTC: true,
     grid: {
@@ -684,7 +697,7 @@ export default function transformProps(
       scrollDataIndex: legendIndex || 0,
       data: legendData as string[],
     },
-    series: dedupSeries(reorderForecastSeries(series) as SeriesOption[]),
+    series: dedupedSeries,
     toolbox: {
       show: zoomable,
       top: TIMESERIES_CONSTANTS.toolboxTop,
@@ -735,6 +748,14 @@ export default function transformProps(
       xAxisLabelRotation,
     });
   }
+  const convertedStringSeries = xForceString
+    ? convertXAxisValuesToString(dedupedSeries as SeriesOption)
+    : dedupedSeries;
+
+  const echartOptionsUpdated = {
+    ...echartOptions,
+    series: convertedStringSeries,
+  };
 
   const onFocusedSeries = (seriesName: string | null) => {
     focusedSeries = seriesName;
@@ -754,13 +775,13 @@ export default function transformProps(
       })
     : echartOptions.series;
 
-  const echartOptionsUpdated = {
-    ...echartOptions,
+  const newEchartOptions = {
+    ...echartOptionsUpdated,
     series: seriesLabelsUpdated,
   };
 
   return {
-    echartOptions: echartOptionsUpdated,
+    echartOptions: newEchartOptions,
     emitCrossFilters,
     formData,
     groupby: groupBy,

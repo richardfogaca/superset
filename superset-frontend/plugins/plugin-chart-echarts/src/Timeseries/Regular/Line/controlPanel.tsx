@@ -40,6 +40,7 @@ import {
   showValueSection,
   truncateXAxis,
   xAxisBounds,
+  xAxisForceString,
   xAxisLabelRotation,
   xAxisLabelInterval,
   legendSortControl,
@@ -190,6 +191,7 @@ const config: ControlPanelConfig = {
         ...legendSection,
         [legendSortControl],
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
+        [xAxisForceString],
         [
           {
             name: 'x_axis_time_format',

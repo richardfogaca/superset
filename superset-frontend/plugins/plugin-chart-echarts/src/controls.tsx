@@ -185,6 +185,23 @@ export const removeNullValuesControl: ControlSetItem = {
   },
 };
 
+export const showTotalsByBarControl: ControlSetItem = {
+  name: 'show_totals_by_bar',
+  config: {
+    type: 'CheckboxControl',
+    label: t('Totals by bar'),
+    default: false,
+    renderTrigger: true,
+    description: t(
+      'Show the total value by stacked bar (not grouped by the category)',
+    ),
+    visibility: ({ controls }: ControlPanelsContainerProps) =>
+      Boolean(controls?.show_value?.value) &&
+      controls?.stack?.value === 'Stack' &&
+      Boolean(controls?.only_total?.value),
+  },
+};
+
 export const percentageThresholdControl: ControlSetItem = {
   name: 'percentage_threshold',
   config: {
@@ -425,5 +442,18 @@ export const forceCategorical: ControlSetItem = {
     default: false,
     renderTrigger: true,
     description: t('Make the x-axis categorical'),
+  },
+};
+
+export const xAxisForceString: ControlSetItem = {
+  name: 'xAxisForceString',
+  config: {
+    type: 'CheckboxControl',
+    label: t('Convert labels to string'),
+    default: false,
+    renderTrigger: true,
+    description: t(
+      'Change the X-Axis labels to string. Useful for making annotation data match the x-axis data',
+    ),
   },
 };

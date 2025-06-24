@@ -64,28 +64,67 @@ export function extractDataTotalValues(
     percentageThreshold: number;
     xAxisCol: string;
     legendState?: LegendState;
+    showTotalsByBar: boolean;
   },
-): {
-  totalStackedValues: number[];
-  thresholdValues: number[];
-} {
-  const totalStackedValues: number[] = [];
+) {
+  const totalStackedValues: { value: number; label: string }[] = [];
   const thresholdValues: number[] = [];
-  const { stack, percentageThreshold, xAxisCol, legendState } = opts;
+  const { stack, xAxisCol, legendState, showTotalsByBar } = opts;
   if (stack) {
+    const hasSecondLevelAxis = data.every(obj =>
+      Object.keys(obj).some(key => key.includes(', ')),
+    );
+    if (showTotalsByBar && hasSecondLevelAxis) {
+      const totals = data.map(item => {
+        const totalItem: {
+          label: string;
+          value: Record<string, number>;
+        } = {
+          label: String(item[opts.xAxisCol]),
+          value: {},
+        };
+        Object.keys(item).forEach(key => {
+          const commaIndex = key.indexOf(', ');
+          if (commaIndex !== -1) {
+            const stackName = key.substring(commaIndex + 2);
+            if (!totalItem.value[stackName]) {
+              totalItem.value[stackName] = 0;
+            }
+            totalItem.value[stackName] += Number(item[key]) || 0;
+          }
+        });
+        return totalItem;
+      });
+      return {
+        totalStackedValues: totals,
+        thresholdValues,
+      };
+    }
     data.forEach(datum => {
-      const values = Object.keys(datum).reduce((prev, curr) => {
+      let allValuesAreNull = true;
+      const totalValue = Object.keys(datum).reduce((prev, curr) => {
         if (curr === xAxisCol) {
           return prev;
         }
+        const datumValue = datum[curr];
+        const isNullValue =
+          curr.includes(NULL_STRING) ||
+          datumValue === null ||
+          datumValue === undefined ||
+          (typeof datumValue === 'string' && datumValue.includes(NULL_STRING));
+        if (!isNullValue) {
+          allValuesAreNull = false;
+        }
+        const value = isNullValue ? 0 : datumValue;
         if (legendState && !legendState[curr]) {
           return prev;
         }
-        const value = datum[curr] || 0;
         return prev + (value as number);
       }, 0);
-      totalStackedValues.push(values);
-      thresholdValues.push(((percentageThreshold || 0) / 100) * values);
+      if (allValuesAreNull) {
+        const label = datum[xAxisCol] as string;
+        totalStackedValues.push({ value: totalValue, label });
+      }
     });
   }
   return {
@@ -94,12 +133,21 @@ export function extractDataTotalValues(
   };
 }
 
+function extractStackId(id: string) {
+  const commaIndex = id.indexOf(', ');
+  if (commaIndex !== -1) {
+    return id.substring(commaIndex + 2);
+  }
+  return id;
+}
+
 export function extractShowValueIndexes(
   series: SeriesOption[],
   opts: {
     stack: StackType;
     onlyTotal?: boolean;
     isHorizontal?: boolean;
+    showTotalsByBar?: boolean;
     legendState?: LegendState;
     seriesOffset?: number;
   },
@@ -111,8 +159,31 @@ export function extractShowValueIndexes(
     isHorizontal,
     onlyTotal,
     seriesOffset = 0,
+    showTotalsByBar = false,
   } = opts;
   if (stack) {
+    const seriesNullFiltered = series.filter(
+      (entry: any) =>
+        entry.id &&
+        typeof entry.id === 'string' &&
+        !entry.id.includes(NULL_STRING) &&
+        entry.data &&
+        entry.data.length > 0,
+    );
+
+    const hasSecondLevelAxis = seriesNullFiltered.some((item: any) =>
+      item.id?.includes(', '),
+    );
+
+    if (showTotalsByBar && hasSecondLevelAxis) {
+      // Group series by their stack identifier and store the index of the last item
+      seriesNullFiltered.forEach((item, index) => {
+        const stackId = extractStackId(item.id?.toString() || '');
+        // @ts-ignore
+        showValueIndexes[stackId] = index;
+      });
+      return showValueIndexes;
+    }
     series.forEach((entry, seriesIndex) => {
       const { data = [] } = entry;
       (data as [any, number][]).forEach((datum, dataIndex) => {
