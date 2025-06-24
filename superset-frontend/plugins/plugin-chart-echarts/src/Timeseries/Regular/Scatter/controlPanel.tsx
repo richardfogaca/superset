@@ -39,6 +39,7 @@ import {
   showValueSection,
   truncateXAxis,
   xAxisBounds,
+  xAxisLabelMaxWidth,
   xAxisLabelRotation,
   xAxisLabelInterval,
   legendSortControl,
@@ -130,6 +131,7 @@ const config: ControlPanelConfig = {
         ],
         [xAxisLabelRotation],
         [xAxisLabelInterval],
+        [xAxisLabelMaxWidth],
         // eslint-disable-next-line react/jsx-key
         ...richTooltipSection,
         // eslint-disable-next-line react/jsx-key

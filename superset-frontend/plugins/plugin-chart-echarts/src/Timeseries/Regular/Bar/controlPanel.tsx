@@ -37,6 +37,7 @@ import {
   showValueSection,
   truncateXAxis,
   xAxisBounds,
+  xAxisLabelMaxWidth,
   xAxisLabelRotation,
   xAxisLabelInterval,
   legendSortControl,
@@ -192,6 +193,7 @@ function createAxisControl(axis: 'x' | 'y'): ControlSetRow[] {
         },
       },
     ],
+    [xAxisLabelMaxWidth],
     [
       {
         name: xAxisLabelInterval.name,

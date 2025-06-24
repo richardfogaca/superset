@@ -43,6 +43,7 @@ import {
   xAxisLabelRotation,
   xAxisLabelInterval,
   legendSortControl,
+  xAxisLabelMaxWidth,
 } from '../../../controls';
 
 const {
@@ -201,6 +202,7 @@ const config: ControlPanelConfig = {
         ],
         [xAxisLabelRotation],
         [xAxisLabelInterval],
+        [xAxisLabelMaxWidth],
         ...richTooltipSection,
         // eslint-disable-next-line react/jsx-key
         [<ControlSubSectionHeader>{t('Y Axis')}</ControlSubSectionHeader>],

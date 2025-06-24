@@ -42,6 +42,7 @@ import {
   xAxisBounds,
   minorTicks,
   legendSortControl,
+  xAxisLabelMaxWidth,
 } from '../../controls';
 import { AreaChartStackControlOptions } from '../../constants';
 
@@ -198,7 +199,11 @@ const config: ControlPanelConfig = {
           },
         ],
         [xAxisLabelRotation],
+<<<<<<< HEAD
         [xAxisLabelInterval],
+=======
+        [xAxisLabelMaxWidth],
+>>>>>>> max-size-x-axis-labels
         ...richTooltipSection,
         // eslint-disable-next-line react/jsx-key
         [<ControlSubSectionHeader>{t('Y Axis')}</ControlSubSectionHeader>],
