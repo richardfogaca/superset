@@ -92,6 +92,7 @@ import {
   getPadding,
   splitStack,
   stackBarXAxisSecondLevel,
+  stackBarYAxisSecondLevel,
   transformEventAnnotation,
   transformFormulaAnnotation,
   transformIntervalAnnotation,
@@ -101,7 +102,6 @@ import {
 import {
   OpacityEnum,
   StackControlsValue,
-  TIMEGRAIN_TO_TIMESTAMP,
   TIMESERIES_CONSTANTS,
 } from '../constants';
 import { getDefaultTooltip } from '../utils/tooltip';
@@ -748,6 +748,21 @@ export default function transformProps(
       xAxisLabelRotation,
     });
   }
+  if (showSecondaryYAxis) {
+    stackBarYAxisSecondLevel({
+      seriesType,
+      echartOptions,
+      stack,
+      data,
+      removeNullValues,
+      xAxisOrig,
+      verboseMap,
+      yAxisTitlePosition,
+      xAxisLabelRotation,
+      xAxisLabelMaxWidth,
+    });
+  }
+
   const convertedStringSeries = xForceString
     ? convertXAxisValuesToString(dedupedSeries as SeriesOption)
     : dedupedSeries;

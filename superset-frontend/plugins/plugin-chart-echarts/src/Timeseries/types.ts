@@ -128,8 +128,10 @@ export type StackBarXAxisSecondLevelProps = {
   echartOptions: any;
   verboseMap: VerboseMapType;
   xAxisOrig: any;
+  removeNullValues?: boolean;
   data: DataType[];
   xAxisLabelRotation: number;
+  xAxisLabelMaxWidth?: any;
 };
 export type StackBarYAxisSecondLevelProps = StackBarXAxisSecondLevelProps & {
   yAxisTitlePosition: string;

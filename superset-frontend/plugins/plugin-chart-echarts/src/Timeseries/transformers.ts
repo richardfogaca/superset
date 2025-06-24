@@ -176,37 +176,6 @@ export type DataRecordValue =
   | bigint
   | undefined;
 
-type TotalStackedValues =
-  | number[]
-  | { value: number; label: string }[]
-  | { value: {}; label: DataRecordValue }[];
-
-function formatTotalStackedValues(
-  totalStackedValues: TotalStackedValues,
-  xAxisForceString: boolean,
-) {
-  if (
-    Array.isArray(totalStackedValues) &&
-    totalStackedValues.length > 0 &&
-    xAxisForceString
-  ) {
-    // @ts-ignore
-    const isObjectArray = totalStackedValues.every(
-      // @ts-ignore
-      item => typeof item === 'object' && 'label' in item,
-    );
-    if (isObjectArray) {
-      return totalStackedValues.map(v => ({
-        // @ts-ignore
-        value: v.value,
-        // @ts-ignore
-        label: `${v.label}`,
-      }));
-    }
-  }
-  return totalStackedValues;
-}
-
 export function transformSeries(
   series: SeriesOption,
   colorScale: CategoricalColorScale,
@@ -861,6 +830,98 @@ export function stackBarXAxisSecondLevel({
         xAxisCategories,
       );
     }
+  }
+}
+
+function filterNullSeriesData(data: any[]) {
+  return data
+    .map(entry =>
+      Object.entries(entry).reduce(
+        (newEntry, [key, value]) => {
+          if (!key.includes('<NULL>') && value !== null) {
+            newEntry[key as keyof typeof newEntry] = value;
+          }
+          return newEntry;
+        },
+        {} as Record<string, any>,
+      ),
+    )
+    .filter(entry => Object.keys(entry).length > 1); // Removes objects with only 'phase_details'
+}
+
+function generateSecondLevelYAxis(
+  secondLevelXAxis: Set<string>,
+  xAxisOrig: any,
+  data: DataType[],
+  removeNullValues: boolean,
+  yAxisTitlePosition: string,
+  axisLabelRotation: number,
+  xAxisLabelMaxWidth: number,
+) {
+  const xAxisCategories = new Set();
+  const xAxisPhy = isPhysicalColumn(xAxisOrig) ? xAxisOrig : xAxisOrig.label;
+  const filteredData = removeNullValues ? filterNullSeriesData(data) : data;
+  filteredData.forEach(entry => {
+    xAxisCategories.add(entry[xAxisPhy]);
+  });
+  return {
+    data: Array.from({ length: xAxisCategories.size }, () => [
+      ...secondLevelXAxis,
+    ]).flat(),
+    position: yAxisTitlePosition.toLowerCase(),
+    axisLabel: {
+      interval: 0,
+      width: xAxisLabelMaxWidth,
+      overflow: 'truncate',
+      rotate: axisLabelRotation,
+    },
+    axisLine: {
+      show: false,
+    },
+    axisTick: {
+      show: false,
+    },
+  };
+}
+
+export function stackBarYAxisSecondLevel({
+  seriesType,
+  echartOptions,
+  stack,
+  data,
+  removeNullValues,
+  xAxisOrig,
+  verboseMap,
+  yAxisTitlePosition,
+  xAxisLabelRotation,
+  xAxisLabelMaxWidth,
+}: StackBarYAxisSecondLevelProps) {
+  if (seriesType === 'bar' && stack) {
+    echartOptions.legend.data = [];
+    const secondLevelXAxis = new Set<string>();
+    echartOptions.series.forEach((entry: any) => {
+      processEntry(
+        entry,
+        echartOptions.legend.data,
+        secondLevelXAxis,
+        verboseMap,
+      );
+    });
+    echartOptions.yAxis = [
+      {
+        ...echartOptions.yAxis,
+        offset: xAxisLabelMaxWidth * 1.2,
+      },
+      generateSecondLevelYAxis(
+        secondLevelXAxis,
+        xAxisOrig,
+        data,
+        removeNullValues ?? false,
+        yAxisTitlePosition,
+        xAxisLabelRotation,
+        xAxisLabelMaxWidth,
+      ),
+    ];
   }
 }
 
