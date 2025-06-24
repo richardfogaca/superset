@@ -25,7 +25,7 @@ from marshmallow import ValidationError
 from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.security import generate_password_hash
 
-from superset import app, is_feature_enabled
+from superset import app, is_feature_enabled, security_manager
 from superset.daos.user import UserDAO
 from superset.extensions import db, event_logger
 from superset.utils.slack import get_user_avatar, SlackClientError
@@ -88,7 +88,10 @@ class CurrentUserRestApi(BaseSupersetApi):
         except NoAuthorizationError:
             return self.response_401()
 
-        return self.response(200, result=user_response_schema.dump(g.user))
+        user_data = user_response_schema.dump(g.user)
+        user_data["is_admin"] = security_manager.is_admin()
+
+        return self.response(200, result=user_data)
 
     @expose("/roles/", methods=("GET",))
     @safe

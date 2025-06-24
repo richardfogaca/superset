@@ -34,6 +34,8 @@ import ReportModal from 'src/features/reports/ReportModal';
 import { deleteActiveReport } from 'src/features/reports/ReportModal/actions';
 import { useExploreAdditionalActionsMenu } from '../useExploreAdditionalActionsMenu';
 import { useExploreMetadataBar } from './useExploreMetadataBar';
+import { fetchIsAdmin } from 'src/utils/fetchIsAdmin';
+import { useExploreContext } from '../ExploreViewContainer/ExploreContext';
 
 const propTypes = {
   actions: PropTypes.object.isRequired,
@@ -89,6 +91,8 @@ export const ExploreChartHeader = ({
   const [isPropertiesModalOpen, setIsPropertiesModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [currentReportDeleting, setCurrentReportDeleting] = useState(null);
+  const { setIsAdmin } = useExploreContext();
+
   const updateCategoricalNamespace = async () => {
     const { dashboards } = metadata || {};
     const dashboard =
@@ -140,6 +144,7 @@ export const ExploreChartHeader = ({
   };
 
   const showModal = useCallback(() => {
+    fetchIsAdmin(setIsAdmin);
     dispatch(setSaveChartModalVisibility(true));
   }, [dispatch]);
 

@@ -49,6 +49,7 @@ import { setSaveChartModalVisibility } from 'src/explore/actions/saveModalAction
 import { SaveActionType } from 'src/explore/types';
 import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
 import { Dashboard } from 'src/types/Dashboard';
+import { ExploreContext } from './ExploreViewContainer/ExploreContext';
 
 // Session storage key for recent dashboard
 const SK_DASHBOARD_ID = 'save_chart_recent_dashboard';
@@ -74,6 +75,7 @@ type SaveModalState = {
   isLoading: boolean;
   saveStatus?: string | null;
   dashboard?: { label: string; value: string | number };
+  isAdminLoaded: boolean;
 };
 
 export const StyledModal = styled(Modal)`
@@ -88,6 +90,8 @@ export const StyledModal = styled(Modal)`
 `;
 
 class SaveModal extends Component<SaveModalProps, SaveModalState> {
+  static contextType = ExploreContext;
+
   constructor(props: SaveModalProps) {
     super(props);
     this.state = {
@@ -96,6 +100,7 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
       action: this.canOverwriteSlice() ? 'overwrite' : 'saveas',
       isLoading: false,
       dashboard: undefined,
+      isAdminLoaded: false,
     };
     this.onDashboardChange = this.onDashboardChange.bind(this);
     this.onSliceNameChange = this.onSliceNameChange.bind(this);
@@ -111,10 +116,18 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
   }
 
   canOverwriteSlice(): boolean {
-    return (
-      this.props.slice?.owners?.includes(this.props.user.userId) &&
-      !this.props.slice?.is_managed_externally
-    );
+    const isOwner = this.props.slice?.owners?.includes(this.props.user.userId);
+    const isAdmin = this.context?.isAdmin ?? false;
+    return (isOwner || isAdmin) && !this.props.slice?.is_managed_externally;
+  }
+
+  setDefaultAction() {
+    const canOverwrite = this.canOverwriteSlice();
+    if (canOverwrite && this.state.action !== 'overwrite') {
+      this.changeAction('overwrite');
+    } else if (!canOverwrite && this.state.action !== 'saveas') {
+      this.changeAction('saveas');
+    }
   }
 
   async componentDidMount() {
@@ -142,6 +155,17 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
           t('An error occurred while loading dashboard information.'),
         );
       }
+    }
+    this.setDefaultAction();
+  }
+
+  componentDidUpdate(prevProps: SaveModalProps, prevState: SaveModalState) {
+    const currentIsAdmin = this.context?.isAdmin ?? false;
+
+    if (!prevState.isAdminLoaded && currentIsAdmin) {
+      this.setState({ isAdminLoaded: true }, () => {
+        this.setDefaultAction();
+      });
     }
   }
 
