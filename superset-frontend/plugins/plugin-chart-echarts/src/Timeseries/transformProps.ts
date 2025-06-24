@@ -54,6 +54,7 @@ import {
   EchartsTimeseriesFormData,
   OrientationType,
   TimeseriesChartTransformedProps,
+  EchartsTimeseriesSeriesType,
 } from './types';
 import { DEFAULT_FORM_DATA } from './constants';
 import { ForecastSeriesEnum, ForecastValue, Refs } from '../types';
@@ -69,6 +70,7 @@ import {
   getColtypesMapping,
   getLegendProps,
   getMinAndMaxFromBounds,
+  updateLabelPosition,
 } from '../utils/series';
 import {
   extractAnnotationLabels,
@@ -198,6 +200,7 @@ export default function transformProps(
     yAxisTitlePosition,
     zoomable,
     stackDimension,
+    labelPosition,
   }: EchartsTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
   const refs: Refs = {};
   const groupBy = ensureIsArray(groupby);
@@ -706,8 +709,28 @@ export default function transformProps(
   const onFocusedSeries = (seriesName: string | null) => {
     focusedSeries = seriesName;
   };
+
+  let defaultLabelPosition = labelPosition;
+  if (
+    seriesType === EchartsTimeseriesSeriesType.Bar &&
+    labelPosition === undefined
+  )
+    defaultLabelPosition = 'inside';
+
+  const seriesLabelsUpdated = defaultLabelPosition
+    ? updateLabelPosition({
+        series: echartOptions.series as SeriesOption[],
+        labelPosition: defaultLabelPosition,
+      })
+    : echartOptions.series;
+
+  const echartOptionsUpdated = {
+    ...echartOptions,
+    series: seriesLabelsUpdated,
+  };
+
   return {
-    echartOptions,
+    echartOptions: echartOptionsUpdated,
     emitCrossFilters,
     formData,
     groupby: groupBy,

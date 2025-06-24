@@ -685,3 +685,29 @@ export function extractTooltipKeys(
   }
   return [forecastValue[0][TOOLTIP_SERIES_KEY]];
 }
+
+export function updateLabelPosition({
+  series,
+  labelPosition,
+}: {
+  series: SeriesOption[];
+  labelPosition: string;
+}): SeriesOption[] {
+  return series.map(serie => {
+    // @ts-ignore
+    const { label, ...rest } = serie;
+    if (rest.type === 'bar' && labelPosition.toLowerCase() === 'inside') {
+      label.color = '#FFFFFF';
+      label.fontStyle = 'bold';
+      label.textBorderColor = '#FFFFFF';
+      label.textBorderWidth = 0;
+    }
+    return {
+      ...rest,
+      label: {
+        ...label,
+        position: labelPosition.toLowerCase(),
+      },
+    };
+  });
+}

@@ -382,7 +382,31 @@ const config: ControlPanelConfig = {
           },
         ],
         ...legendSection,
+<<<<<<< HEAD
         [legendSortControl],
+=======
+        [<ControlSubSectionHeader>{t('Label')}</ControlSubSectionHeader>],
+        [
+          {
+            name: 'labelPosition',
+            config: {
+              type: 'SelectControl',
+              freeForm: true,
+              clearable: true,
+              label: t('Label Position'),
+              renderTrigger: true,
+              choices: formatSelectOptions([
+                'Inside',
+                'Top',
+                'Bottom',
+                'Left',
+                'Right',
+              ]),
+              description: t('Changing this control takes effect instantly'),
+            },
+          },
+        ],
+>>>>>>> update-label-position
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
         ...createAxisControl('x'),
         [truncateXAxis],
