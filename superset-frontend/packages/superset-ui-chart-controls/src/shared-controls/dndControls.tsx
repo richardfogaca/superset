@@ -169,12 +169,8 @@ export const dndAdhocMetricsControl: SharedControlConfig<
 export const dndAdhocMetricControl: typeof dndAdhocMetricsControl = {
   ...dndAdhocMetricsControl,
   multi: false,
-  label: t('Metric'),
-  description: t(
-    'Select a metric to display. ' +
-      'You can use an aggregation function on a column ' +
-      'or write custom SQL to create a metric.',
-  ),
+  label: t('Metrics'),
+  description: t('Metrics'),
 };
 
 export const dndAdhocMetricControl2: typeof dndAdhocMetricControl = {
