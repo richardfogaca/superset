@@ -90,6 +90,25 @@ class ExportDatasetsCommand(ExportModelsCommand):
             lambda: ExportDatasetsCommand._file_content(model),
         )
 
+        if payload['sql']:
+            dataset_names = re.findall(
+                r'{{\s*(?:dataset|dataset_custom)\(\s*[\"\']([^\"\']*)[\"\']\s*(?:,\s*[^\)]*)?\)\s*}}',
+                payload["sql"]
+            )
+            dataset_ids = []
+            dataset_names = list(set(dataset_names))
+            for dataset_name in dataset_names:
+                try:
+                    dataset_ = DatasetDAO.get_dataset_by_name(dataset_name)
+                    dataset_ids.append(dataset_.id)
+                except:
+                    logger.warning(f"Unable to locate the jinja referenced table "
+                                   f"{dataset_name}, referenced in "
+                                   f"{payload['table_name']}")
+            dataset_ids = [int(el) for el in dataset_ids]
+            if len(dataset_ids) > 0:
+                yield from ExportDatasetsCommand(dataset_ids).run()
+
         # include database as well
         if export_related:
             db_file_name = get_filename(

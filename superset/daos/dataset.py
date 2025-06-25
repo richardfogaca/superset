@@ -47,6 +47,15 @@ class DatasetDAO(BaseDAO[SqlaTable]):
             logger.error("Could not get database by id: %s", str(ex), exc_info=True)
             return None
 
+    @classmethod
+    def get_dataset_by_name(cls, table_name: str) -> Optional[Model]:
+        try:
+            return db.session.query(SqlaTable).filter_by(
+                table_name=table_name).one_or_none()
+        except SQLAlchemyError as ex:  # pragma: no cover
+            logger.error("Could not get dataset by name: %s", str(ex), exc_info=True)
+            return None
+
     @staticmethod
     def get_related_objects(database_id: int) -> dict[str, Any]:
         charts = (
