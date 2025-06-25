@@ -34,6 +34,7 @@ import {
   CaretDownOutlined,
   CaretLeftOutlined,
   CaretRightOutlined,
+  CaretRightFilled,
   CalendarOutlined,
   CheckOutlined,
   CheckCircleOutlined,
@@ -110,6 +111,7 @@ import {
   FilterOutlined,
   UnorderedListOutlined,
   WarningOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import { FC } from 'react';
 import { IconType } from './types';
@@ -133,6 +135,7 @@ const AntdIcons = {
   CaretDownOutlined,
   CaretLeftOutlined,
   CaretRightOutlined,
+  CaretRightFilled,
   CalendarOutlined,
   CheckOutlined,
   CheckCircleOutlined,
@@ -209,6 +212,7 @@ const AntdIcons = {
   FilterOutlined,
   UnorderedListOutlined,
   WarningOutlined,
+  KeyOutlined,
 } as const;
 
 type AntdIconNames = keyof typeof AntdIcons;

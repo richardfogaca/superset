@@ -48,6 +48,8 @@ import {
   ANNOTATION_SOURCE_TYPES_METADATA,
 } from './AnnotationTypes';
 
+import { correctAllColumns } from './utils';
+
 const AUTOMATIC_COLOR = '';
 
 const propTypes = {
@@ -648,9 +650,20 @@ class AnnotationLayer extends PureComponent {
       const columns = (slice.data.groupby || [])
         .concat(slice.data.all_columns || [])
         .map(x => ({ value: x, label: x }));
+
+      const dedupColumns = [];
+      const valueSet = new Set();
+
+      columns.forEach(item => {
+        if (!valueSet.has(item.value)) {
+          valueSet.add(item.value);
+          dedupColumns.push(item);
+        }
+      });
       const timeColumnOptions = slice.data.include_time
-        ? [{ value: '__timestamp', label: '__timestamp' }].concat(columns)
-        : columns;
+        ? [{ value: '__timestamp', label: '__timestamp' }].concat(dedupColumns)
+        : dedupColumns;
+
       return (
         <div style={{ marginRight: '2rem' }}>
           <PopoverSection

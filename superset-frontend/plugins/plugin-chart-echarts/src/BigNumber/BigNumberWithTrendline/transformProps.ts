@@ -35,7 +35,7 @@ import {
   BigNumberWithTrendlineChartProps,
   TimeSeriesDatum,
 } from '../types';
-import { getDateFormatter, parseMetricValue } from '../utils';
+import { getDateFormatter, parseMetricValue, getOriginalLabel } from '../utils';
 import { getDefaultTooltip } from '../../utils/tooltip';
 import { Refs } from '../../types';
 import { replacePlaceholderWithValue } from '../utils';
@@ -65,10 +65,13 @@ export default function transformProps(
     comparisonType = '',
     comparisonFormat = '',
     timeFormat,
+    metricNameFontSize,
     headerFontSize,
     metric = 'value',
     showTimestamp,
     showTrendLine,
+    subtitle = '',
+    subtitleFontSize,
     aggregation,
     startYAxisAtZero,
     subheader = '',
@@ -103,6 +106,9 @@ export default function transformProps(
   const aggregatedData = hasAggregatedData ? aggregatedQueryData.data[0] : null;
   const refs: Refs = {};
   const metricName = getMetricLabel(metric);
+  const metrics = chartProps.datasource?.metrics || [];
+  const originalLabel = getOriginalLabel(metric, metrics);
+  const showMetricName = chartProps.rawFormData?.show_metric_name ?? false;
   const compareLag = Number(compareLag_) || 0;
   let formattedSubheader = subheader;
   const formattedTopheader = topheader;
@@ -346,7 +352,12 @@ export default function transformProps(
     headerFormatter,
     formatTime,
     formData,
+    metricName: originalLabel,
+    showMetricName,
+    metricNameFontSize,
     headerFontSize,
+    subtitleFontSize,
+    subtitle,
     subheaderFontSize,
     topheaderFontSize,
     topheader: newTopheader,
