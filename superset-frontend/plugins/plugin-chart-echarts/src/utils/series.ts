@@ -29,6 +29,7 @@ import {
   normalizeTimestamp,
   NumberFormats,
   NumberFormatter,
+  QueryFormMetric,
   SupersetTheme,
   TimeFormatter,
   ValueFormatter,
@@ -37,7 +38,7 @@ import { SortSeriesType, LegendPaddingType } from '@superset-ui/chart-controls';
 import { format } from 'echarts/core';
 import type { LegendComponentOption } from 'echarts/components';
 import type { SeriesOption } from 'echarts';
-import { isEmpty, maxBy, meanBy, minBy, orderBy, sumBy } from 'lodash';
+import { isEmpty, maxBy, meanBy, minBy, orderBy, sumBy, map } from 'lodash';
 import {
   NULL_STRING,
   StackControlsValue,
@@ -130,16 +131,62 @@ export function extractShowValueIndexes(
   return showValueIndexes;
 }
 
+function getUniqueSeriesNames(
+  rows: DataRecord[],
+  xAxis: string,
+  extraMetricLabels: any[],
+) {
+  const seriesNames: string[] = [];
+  rows.forEach(row => {
+    Object.keys(row).forEach(key => {
+      if (
+        key !== xAxis &&
+        !extraMetricLabels.includes(key) &&
+        !seriesNames.includes(key)
+      ) {
+        seriesNames.push(key);
+      }
+    });
+  });
+  return seriesNames;
+}
+
 export function sortAndFilterSeries(
   rows: DataRecord[],
   xAxis: string,
   extraMetricLabels: any[],
   sortSeriesType?: SortSeriesType,
   sortSeriesAscending?: boolean,
+  metricNames?: string[],
 ): string[] {
-  const seriesNames = Object.keys(rows[0])
-    .filter(key => key !== xAxis)
-    .filter(key => !extraMetricLabels.includes(key));
+  // Ensure we have series names based on all rows keys, not only the first row
+  const seriesNames = getUniqueSeriesNames(rows, xAxis, extraMetricLabels);
+
+  if (
+    metricNames &&
+    metricNames.length > 0 &&
+    sortSeriesType === SortSeriesType.Met
+  ) {
+    // Create a map for the index of each metricName
+    const metricIndexMap = new Map(
+      metricNames.map((name, index) => [name, index]),
+    );
+
+    // Find the index of the metricName for a given seriesName
+    const findMetricIndex = (seriesName: string) => {
+      const foundEntry = [...metricIndexMap.entries()].find(([metricName]) =>
+        seriesName.startsWith(metricName),
+      );
+      return foundEntry ? foundEntry[1] : Number.MAX_VALUE;
+    };
+
+    // Sort based on the metricIndex
+    const sortedSeriesNames = seriesNames.sort(
+      (a, b) => findMetricIndex(a) - findMetricIndex(b),
+    );
+
+    return sortedSeriesNames;
+  }
 
   let aggregator: (name: string) => { name: string; value: any };
 
@@ -155,6 +202,19 @@ export function sortAndFilterSeries(
       break;
     case SortSeriesType.Avg:
       aggregator = name => ({ name, value: meanBy(rows, name) });
+      break;
+    case SortSeriesType.MaxAbs:
+      aggregator = name => ({
+        name,
+        value: Math.abs(
+          // @ts-ignore
+          maxBy(
+            // @ts-ignore
+            map(rows, row => ({ ...row, [name]: Math.abs(row[name]) })),
+            name,
+          )?.[name],
+        ),
+      });
       break;
     default: {
       const collator = new Intl.Collator(undefined, {
@@ -272,6 +332,7 @@ export function extractSeries(
     sortSeriesAscending?: boolean;
     xAxisSortSeries?: SortSeriesType;
     xAxisSortSeriesAscending?: boolean;
+    metricNames?: string[];
   } = {},
 ): [SeriesOption[], number[], number | undefined] {
   const {
@@ -286,6 +347,7 @@ export function extractSeries(
     sortSeriesAscending,
     xAxisSortSeries,
     xAxisSortSeriesAscending,
+    metricNames,
   } = opts;
   if (data.length === 0) return [[], [], undefined];
   const rows: DataRecord[] = data.map(datum => ({
@@ -298,6 +360,7 @@ export function extractSeries(
     extraMetricLabels,
     sortSeriesType,
     sortSeriesAscending,
+    metricNames,
   );
   const sortedRows =
     isDefined(xAxisSortSeries) && isDefined(xAxisSortSeriesAscending)
@@ -444,10 +507,10 @@ export function getLegendProps(
     selected: legendState,
     selector: ['all', 'inverse'],
     selectorLabel: {
-      fontFamily: theme.typography.families.sansSerif,
-      fontSize: theme.typography.sizes.s,
-      color: theme.colors.grayscale.base,
-      borderColor: theme.colors.grayscale.base,
+      fontFamily: theme.fontFamily,
+      fontSize: theme.fontSizeSM,
+      color: theme.colorText,
+      borderColor: theme.colorBorder,
     },
   };
   const MIN_LEGEND_WIDTH = 0;
@@ -684,4 +747,41 @@ export function extractTooltipKeys(
     return forecastValue.map(s => s[TOOLTIP_SERIES_KEY]);
   }
   return [forecastValue[0][TOOLTIP_SERIES_KEY]];
+}
+
+export function getMetricNames(
+  metrics: QueryFormMetric[],
+  verboseMap: Record<string, string[] | string>,
+) {
+  if (!Array.isArray(metrics) || metrics.length === 0) {
+    return [];
+  }
+
+  return metrics.map(metric => {
+    if (typeof metric === 'string') {
+      const verboseValue = verboseMap?.[metric];
+
+      if (verboseValue !== undefined) {
+        if (Array.isArray(verboseValue) && verboseValue.length === 1) {
+          return verboseValue[0];
+        }
+        return verboseValue;
+      }
+
+      const matchingKey = Object.keys(verboseMap).find(
+        key => key.startsWith(`${metric},`) || key === metric,
+      );
+
+      if (matchingKey) {
+        const compoundValue = verboseMap[matchingKey];
+        if (Array.isArray(compoundValue) && compoundValue.length > 0) {
+          return compoundValue[0];
+        }
+        return compoundValue;
+      }
+
+      return metric;
+    }
+    return metric?.label;
+  });
 }

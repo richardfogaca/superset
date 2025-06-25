@@ -172,13 +172,13 @@ export default function transformProps(
   if (compareLag > 0 && sortedData.length > 0) {
     const compareIndex = compareLag;
     if (compareIndex < sortedData.length) {
-      const compareValue = sortedData[compareIndex][1];
+      // const compareFromValue = sortedData[compareIndex][1];
+      const compareToValue = sortedData[0][1];
       // compare values must both be non-nulls
-      if (bigNumber !== null && compareValue !== null) {
-       if (comparisonType === 'percentage') {
-          percentChange = compareValue
-          // @ts-ignore
-            ? (bigNumber - compareValue) / Math.abs(compareValue)
+      if (bigNumber !== null && compareToValue !== null) {
+        if (comparisonType === 'percentage') {
+          percentChange = compareToValue
+            ? (Number(bigNumber) - compareToValue) / Math.abs(compareToValue)
             : 0;
           formattedSubheader = `${formatPercentChange(
             percentChange,
@@ -193,10 +193,8 @@ export default function transformProps(
           ${compareSuffix}`;
         }
         if (comparisonType === 'values') {
-          lastValue = compareValue;
-          formattedSubheader = `${formatLastValue(
-            lastValue,
-          )} ${compareSuffix}`;
+          lastValue = compareToValue;
+          formattedSubheader = `${formatLastValue(lastValue)} ${compareSuffix}`;
         }
       }
     }
@@ -249,7 +247,7 @@ export default function transformProps(
     metric,
     currencyFormats,
     columnFormats,
-    yAxisFormat,
+    metricEntry?.d3format || yAxisFormat,
     currencyFormat,
   );
 

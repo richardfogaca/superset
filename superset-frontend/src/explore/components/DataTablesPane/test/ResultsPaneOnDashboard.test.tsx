@@ -18,6 +18,7 @@
  */
 import fetchMock from 'fetch-mock';
 import {
+  screen,
   render,
   userEvent,
   waitForElementToBeRemoved,
@@ -168,10 +169,55 @@ describe('ResultsPaneOnDashboard', () => {
       sliceId: 196,
       vizType: VizType.MixedTimeseries,
     });
-    const { findByText } = render(<ResultsPaneOnDashboard {...props} />, {
+
+    render(<ResultsPaneOnDashboard {...props} />, {
       useRedux: true,
     });
-    expect(await findByText('Results')).toBeVisible();
-    expect(await findByText('Results 2')).toBeVisible();
+
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole('status', { name: 'Loading' }),
+    );
+
+    const tab1 = document.querySelector('[data-node-key="results"]');
+    const tab2 = document.querySelector('[data-node-key="results 2"]');
+
+    expect(tab1).toBeVisible();
+    expect(tab2).toBeVisible();
+  });
+
+  test('dynamic number of results pane', async () => {
+    const FakeChart = () => <span>test</span>;
+    const metadata = new ChartMetadata({
+      name: 'test-chart',
+      thumbnail: '',
+      dynamicQueryObjectCount: true,
+    });
+
+    const plugin = new ChartPlugin({
+      metadata,
+      Chart: FakeChart,
+    });
+    plugin.configure({ key: VizType.MixedTimeseries }).register();
+
+    const props = createResultsPaneOnDashboardProps({
+      sliceId: 196,
+      vizType: VizType.MixedTimeseries,
+    });
+
+    render(<ResultsPaneOnDashboard {...props} />, {
+      useRedux: true,
+    });
+
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole('status', { name: 'Loading' }),
+    );
+
+    const tab1 = document.querySelector('[data-node-key="results"]');
+    const tab2 = document.querySelector('[data-node-key="results 2"]');
+    const tab3 = document.querySelector('[data-node-key="results 3"]');
+
+    expect(tab1).toBeVisible();
+    expect(tab2).toBeVisible();
+    expect(tab3).toBeNull();
   });
 });

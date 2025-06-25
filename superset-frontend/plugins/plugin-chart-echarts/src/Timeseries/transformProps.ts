@@ -68,6 +68,7 @@ import {
   getAxisType,
   getColtypesMapping,
   getLegendProps,
+  getMetricNames,
   getMinAndMaxFromBounds,
 } from '../utils/series';
 import {
@@ -124,6 +125,7 @@ export default function transformProps(
     theme,
     inContextMenu,
     emitCrossFilters,
+    legendIndex,
   } = chartProps;
 
   let focusedSeries: string | null = null;
@@ -183,6 +185,7 @@ export default function transformProps(
     xAxisBounds,
     xAxisForceCategorical,
     xAxisLabelRotation,
+    xAxisLabelInterval,
     xAxisSort,
     xAxisSortAsc,
     xAxisTimeFormat,
@@ -195,6 +198,7 @@ export default function transformProps(
     yAxisTitleMargin,
     yAxisTitlePosition,
     zoomable,
+    stackDimension,
   }: EchartsTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
   const refs: Refs = {};
   const groupBy = ensureIsArray(groupby);
@@ -235,6 +239,8 @@ export default function transformProps(
 
   const isMultiSeries = groupBy.length || metrics?.length > 1;
 
+  const metricNames = getMetricNames(metrics, verboseMap);
+
   const [rawSeries, sortedTotalValues, minPositiveValue] = extractSeries(
     rebasedData,
     {
@@ -248,6 +254,7 @@ export default function transformProps(
       sortSeriesAscending,
       xAxisSortSeries: isMultiSeries ? xAxisSort : undefined,
       xAxisSortSeriesAscending: isMultiSeries ? xAxisSortAsc : undefined,
+      metricNames,
     },
   );
   const showValueIndexes = extractShowValueIndexes(rawSeries, {
@@ -436,6 +443,23 @@ export default function transformProps(
       }
     });
 
+  if (
+    stack === StackControlsValue.Stack &&
+    stackDimension &&
+    chartProps.rawFormData.groupby
+  ) {
+    const idxSelectedDimension =
+      formData.metrics.length > 1
+        ? 1
+        : 0 + chartProps.rawFormData.groupby.indexOf(stackDimension);
+    for (const s of series) {
+      if (s.id) {
+        const columnsArr = labelMap[s.id];
+        (s as any).stack = columnsArr[idxSelectedDimension];
+      }
+    }
+  }
+
   // axis bounds need to be parsed to replace incompatible values with undefined
   const [xAxisMin, xAxisMax] = (xAxisBounds || []).map(parseAxisBound);
   let [yAxisMin, yAxisMax] = (yAxisBounds || []).map(parseAxisBound);
@@ -466,6 +490,7 @@ export default function transformProps(
     setControlValue = () => {},
     onContextMenu,
     onLegendStateChanged,
+    onLegendScroll,
   } = hooks;
 
   const addYAxisLabelOffset = !!yAxisTitle;
@@ -501,6 +526,7 @@ export default function transformProps(
       hideOverlap: true,
       formatter: xAxisFormatter,
       rotate: xAxisLabelRotation,
+      interval: xAxisLabelInterval,
     },
     minorTick: { show: minorTicks },
     minInterval:
@@ -640,6 +666,7 @@ export default function transformProps(
         legendState,
         padding,
       ),
+      scrollDataIndex: legendIndex || 0,
       data: legendData as string[],
     },
     series: dedupSeries(reorderForecastSeries(series) as SeriesOption[]),
@@ -697,7 +724,6 @@ export default function transformProps(
   const onFocusedSeries = (seriesName: string | null) => {
     focusedSeries = seriesName;
   };
-
   return {
     echartOptions,
     emitCrossFilters,
@@ -720,5 +746,6 @@ export default function transformProps(
     },
     refs,
     coltypeMapping: dataTypes,
+    onLegendScroll,
   };
 }
