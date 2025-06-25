@@ -164,3 +164,5 @@ export * from './Table';
 export * from './TableView';
 export * from './Tag';
 export * from './constants';
+export { default as SafeMarkdown } from './SafeMarkdown';
+export * from './SafeMarkdown';

@@ -20,7 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 import { mergeWith } from 'lodash';
-import { FeatureFlag, isFeatureEnabled } from '../../utils';
+import { FeatureFlag, isFeatureEnabled } from '../utils';
 
 interface SafeMarkdownProps {
   source: string;
@@ -37,7 +37,7 @@ export function getOverrideHtmlSchema(
   );
 }
 
-export function SafeMarkdown({
+function SafeMarkdown({
   source,
   htmlSanitization = true,
   htmlSchemaOverrides = {},
@@ -85,3 +85,5 @@ export function SafeMarkdown({
     </ReactMarkdown>
   );
 }
+
+export default SafeMarkdown;
