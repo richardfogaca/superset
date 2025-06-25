@@ -17,6 +17,8 @@
 
 from __future__ import annotations
 
+import numpy as np
+
 from decimal import Decimal
 from typing import Any
 
@@ -55,7 +57,8 @@ def contribution(
     :return: DataFrame with contributions.
     """
     contribution_df = df.copy()
-    numeric_df = contribution_df.select_dtypes(include=["number", Decimal])
+    numeric_df = contribution_df.select_dtypes(include=[np.number, float])
+    
     numeric_df.fillna(0, inplace=True)
     # verify column selections
     if columns:
