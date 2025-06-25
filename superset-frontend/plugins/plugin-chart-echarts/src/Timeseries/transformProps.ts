@@ -90,6 +90,7 @@ import {
   getPadding,
   splitStack,
   stackBarXAxisSecondLevel,
+  stackBarYAxisSecondLevel,
   transformEventAnnotation,
   transformFormulaAnnotation,
   transformIntervalAnnotation,
@@ -199,6 +200,8 @@ export default function transformProps(
     yAxisTitlePosition,
     zoomable,
     stackDimension,
+    removeNullValues,
+    xAxisLabelMaxWidth,
   }: EchartsTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
   const refs: Refs = {};
   const groupBy = ensureIsArray(groupby);
@@ -254,7 +257,7 @@ export default function transformProps(
       sortSeriesAscending,
       xAxisSortSeries: isMultiSeries ? xAxisSort : undefined,
       xAxisSortSeriesAscending: isMultiSeries ? xAxisSortAsc : undefined,
-      metricNames,
+      metricNames: metricNames as string[],
     },
   );
   const showValueIndexes = extractShowValueIndexes(rawSeries, {
@@ -718,6 +721,20 @@ export default function transformProps(
       xAxisOrig,
       data,
       xAxisLabelRotation,
+    });
+  }
+  if (showSecondaryYAxis) {
+    stackBarYAxisSecondLevel({
+      seriesType,
+      echartOptions,
+      stack,
+      data,
+      removeNullValues,
+      xAxisOrig,
+      verboseMap,
+      yAxisTitlePosition,
+      xAxisLabelRotation,
+      xAxisLabelMaxWidth,
     });
   }
 

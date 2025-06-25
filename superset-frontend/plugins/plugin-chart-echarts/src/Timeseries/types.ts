@@ -133,6 +133,8 @@ export type StackBarXAxisSecondLevelProps = {
 };
 export type StackBarYAxisSecondLevelProps = StackBarXAxisSecondLevelProps & {
   yAxisTitlePosition: string;
+  removeNullValues: boolean;
+  xAxisLabelMaxWidth: number;
 };
 type TransformedSeriesType = {
   label: any;

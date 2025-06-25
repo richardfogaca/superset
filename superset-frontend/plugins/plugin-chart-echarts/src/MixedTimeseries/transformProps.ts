@@ -255,7 +255,7 @@ export default function transformProps(
     sortSeriesAscending,
     stack,
     totalStackedValues,
-    metricNames,
+    metricNames: metricNames as string[],
   });
   const rebasedDataB = rebaseForecastDatum(data2, verboseMap);
   const {
@@ -275,7 +275,7 @@ export default function transformProps(
     sortSeriesAscending: sortSeriesAscendingB,
     stack: Boolean(stackB),
     totalStackedValues: totalStackedValuesB,
-    metricNames: metricNamesB,
+    metricNames: metricNamesB as string[],
   });
 
   const dataTypes = getColtypesMapping(queriesData[0]);

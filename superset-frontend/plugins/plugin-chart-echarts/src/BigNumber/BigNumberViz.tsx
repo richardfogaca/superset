@@ -339,7 +339,7 @@ class BigNumberVis extends PureComponent<BigNumberVizProps, BigNumberVisState> {
   }
 
   rendermetricComparisonSummary(maxHeight: number) {
-    const { bigNumber, subheader, width, bigNumberFallback } = this.props;
+    const { subheader, width } = this.props;
     let fontSize = 0;
 
     const text = subheader;
@@ -666,7 +666,7 @@ export default styled(BigNumberVis)`
     &.is-fallback-value {
       .kicker,
       .topheader-line {
-        opacity: ${theme.opacity.mediumHeavy};
+        opacity: 60%;
       },
       .header-line,
       .subheader-line {

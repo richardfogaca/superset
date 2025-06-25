@@ -57,6 +57,9 @@ export default function transformProps(
     currencyFormat,
     subheader,
     subheaderFontSize,
+    prefix = '',
+    topheader = '',
+    topheaderFontSize,
   } = formData;
   const refs: Refs = {};
   const { data = [], coltypes = [] } = queriesData[0] || {};
@@ -69,6 +72,8 @@ export default function transformProps(
   const formattedSubtitleFontSize = subtitle?.trim()
     ? (subtitleFontSize ?? 1)
     : (subheaderFontSize ?? 1);
+  const formattedTopheader = topheader;
+  const formattedPrefix = prefix;
   const bigNumber =
     data.length === 0 ? null : parseMetricValue(data[0][metricName]);
 
@@ -122,5 +127,8 @@ export default function transformProps(
     metricName: originalLabel,
     showMetricName,
     metricNameFontSize,
+    topheaderFontSize,
+    topheader: formattedTopheader,
+    prefix: formattedPrefix,
   };
 }

@@ -402,6 +402,18 @@ const config: ControlPanelConfig = {
         ...richTooltipSection,
         [<ControlSubSectionHeader>{t('Y Axis')}</ControlSubSectionHeader>],
         ...createAxisControl('y'),
+        [
+          {
+            name: 'showSecondaryYAxis',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Show Secondary Y Axis'),
+              default: showSecondaryYAxis,
+              renderTrigger: true,
+              description: t('Show Secondary Y Axis.'),
+            },
+          },
+        ],
       ],
     },
   ],
