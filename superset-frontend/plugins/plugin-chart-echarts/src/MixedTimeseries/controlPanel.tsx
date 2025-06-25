@@ -383,6 +383,7 @@ const config: ControlPanelConfig = {
         [<ControlSubSectionHeader>{t('X Axis')}</ControlSubSectionHeader>],
         [xAxisForceString],
         ['x_axis_time_format'],
+        ['x_axis_number_format'],
         [xAxisLabelRotation],
         [xAxisLabelInterval],
         [xAxisLabelMaxWidth],
