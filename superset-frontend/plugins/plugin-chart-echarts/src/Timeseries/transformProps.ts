@@ -87,6 +87,8 @@ import { defaultGrid, defaultYAxis } from '../defaults';
 import {
   getBaselineSeriesForStream,
   getPadding,
+  splitStack,
+  stackBarXAxisSecondLevel,
   transformEventAnnotation,
   transformFormulaAnnotation,
   transformIntervalAnnotation,
@@ -161,6 +163,8 @@ export default function transformProps(
     richTooltip,
     seriesType,
     showLegend,
+    showSecondaryXAxis,
+    showSecondaryYAxis,
     showValue,
     sliceId,
     sortSeriesType,
@@ -331,6 +335,20 @@ export default function transformProps(
       },
     );
     if (transformedSeries) {
+      if (seriesType === 'bar') {
+        splitStack({
+          // @ts-ignore
+          transformedSeries,
+          isHorizontal,
+          onlyTotal,
+          stack,
+          groupby,
+          legendNames: [],
+          colorScale,
+          sliceId,
+          hasDoubleComma: false,
+        });
+      }
       if (stack === StackControlsValue.Stream) {
         // bug in Echarts - `stackStrategy: 'all'` doesn't work with nulls, so we cast them to 0
         series.push({
@@ -663,6 +681,18 @@ export default function transformProps(
         ]
       : [],
   };
+
+  if (showSecondaryXAxis) {
+    stackBarXAxisSecondLevel({
+      seriesType,
+      stack,
+      echartOptions,
+      verboseMap,
+      xAxisOrig,
+      data,
+      xAxisLabelRotation,
+    });
+  }
 
   const onFocusedSeries = (seriesName: string | null) => {
     focusedSeries = seriesName;
