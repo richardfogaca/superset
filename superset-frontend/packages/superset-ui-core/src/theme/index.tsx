@@ -19,6 +19,10 @@
 import emotionStyled from '@emotion/styled';
 import { useTheme as useThemeBasic } from '@emotion/react';
 // import { theme as antdThemeImport } from 'antd';
+import {
+  SafeMarkdown,
+  isHandlebarsJavascriptEnabled,
+} from '../components/SafeMarkdown';
 import { Theme } from './Theme';
 import type {
   SupersetTheme,
@@ -64,7 +68,15 @@ const themeObject = Theme.fromConfig({ algorithm: 'default' });
 const { theme } = themeObject;
 const supersetTheme = theme;
 
-export { Theme, themeObject, styled, theme, supersetTheme };
+export {
+  Theme,
+  themeObject,
+  styled,
+  theme,
+  supersetTheme,
+  SafeMarkdown,
+  isHandlebarsJavascriptEnabled,
+};
 export type {
   SupersetTheme,
   SerializableThemeConfig,

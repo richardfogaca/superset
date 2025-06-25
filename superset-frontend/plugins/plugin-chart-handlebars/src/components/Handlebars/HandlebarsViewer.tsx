@@ -16,12 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { styled, t, SafeMarkdown } from '@superset-ui/core';
 import {
-  SafeMarkdown,
-  styled,
-  t,
   isHandlebarsJavascriptEnabled,
-} from '@superset-ui/core';
+  SafeMarkdownJS,
+} from '@superset-ui/core/components';
 import Handlebars from 'handlebars';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
@@ -70,12 +69,14 @@ export const HandlebarsViewer = ({
   }
 
   if (renderedTemplate) {
+    if (isJSEnabled) {
+      return <SafeMarkdownJS source={renderedTemplate} />;
+    }
     return (
       <SafeMarkdown
         source={renderedTemplate}
         htmlSanitization={htmlSanitization}
         htmlSchemaOverrides={htmlSchemaOverrides}
-        isJSEnabled={isJSEnabled}
       />
     );
   }
@@ -105,19 +106,6 @@ Handlebars.registerHelper(
     return number.toLocaleString(locale);
   },
 );
-
-// usage: {{parseJson jsonString}}
-Handlebars.registerHelper('parseJson', (jsonString: string) => {
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    if (error instanceof Error) {
-      error.message = `Invalid JSON string: ${error.message}`;
-      throw error;
-    }
-    throw new Error(`Invalid JSON string: ${String(error)}`);
-  }
-});
 
 Helpers.registerHelpers(Handlebars);
 HandlebarsGroupBy.register(Handlebars);
