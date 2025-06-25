@@ -20,6 +20,7 @@ from typing import Any
 
 from superset import db, security_manager
 from superset.commands.exceptions import ImportFailedError
+from superset.commands.chart.importers.v1.utils import update_chart_configuration_with_new_ids
 from superset.models.dashboard import Dashboard
 from superset.utils import json
 from superset.utils.core import get_user
@@ -139,6 +140,14 @@ def update_id_refs(  # pylint: disable=too-many-locals  # noqa: C901
             native_filter["scope"]["excluded"] = [
                 id_map[old_id] for old_id in scope_excluded if old_id in id_map
             ]
+        old_chart_ids_in_scope = native_filter.get("chartsInScope", [])
+        new_chart_ids_in_scope = []
+        for old_id_chart_in_scope in old_chart_ids_in_scope:
+            if old_id_chart_in_scope in id_map:
+                new_chart_ids_in_scope.append(id_map[old_id_chart_in_scope])
+        native_filter["chartsInScope"] = new_chart_ids_in_scope
+    
+    update_chart_configuration_with_new_ids(fixed, id_map)
 
     return fixed
 

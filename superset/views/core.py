@@ -608,6 +608,9 @@ class Superset(BaseSupersetView):
 
         utils.remove_extra_adhoc_filters(form_data)
 
+        if "adhoc_filters_b" in form_data:
+            raise Exception("adhoc_filters_b should not be in form_data")
+
         assert slc
         slc.params = json.dumps(form_data, indent=2, sort_keys=True)
         slc.datasource_name = datasource_name
