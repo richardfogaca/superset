@@ -111,6 +111,7 @@ FRONTEND_CONF_KEYS = (
     "SQLLAB_QUERY_RESULT_TIMEOUT",
     "SYNC_DB_PERMISSIONS_IN_ASYNC_MODE",
     "TABLE_VIZ_MAX_ROW_SERVER",
+    "MAX_URL_LENGTH",
 )
 
 logger = logging.getLogger(__name__)
