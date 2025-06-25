@@ -31,10 +31,47 @@ import {
   ChartPlugin,
   SqlaFormData,
   ChartMetadata,
+  CurrencyFormatter,
+  NumberFormatter,
+  ValueFormatter,
+  QueryFormMetric,
+  ContributionType,
 } from '@superset-ui/core';
 import type { EChartsCoreOption, EChartsType } from 'echarts/core';
 import type { TooltipMarker } from 'echarts/types/src/util/format';
+import type { OptionId, SeriesOption } from 'echarts/types/src/util/types';
 import { StackControlsValue } from './constants';
+
+export type CreateTooltipFormatterProps = {
+  rawSeriesAIds: (OptionId | undefined)[];
+  rawSeriesBIds: (OptionId | undefined)[];
+  richTooltip: boolean;
+  tooltipSortByMetric: boolean;
+  tooltipFormatter: (value: number) => string;
+  tooltipSuffix: string;
+  tooltipSuffixB: string;
+  primarySeries: Set<string>;
+  formatter: NumberFormatter | CurrencyFormatter;
+  formatterSecondary: NumberFormatter | CurrencyFormatter;
+  getFormatter: (
+    customFormatters: Record<string, ValueFormatter>,
+    defaultFormatter: ValueFormatter,
+    metrics: QueryFormMetric[],
+    formatterKey: string,
+    forcePercentFormat: boolean,
+  ) => ValueFormatter;
+  customFormatters: {};
+  customFormattersSecondary: {};
+  groupby: QueryFormColumn[];
+  groupbyB: QueryFormColumn[];
+  inverted: Record<string, any>;
+  labelMap: Record<string, string[]>;
+  labelMapB: Record<string, string[]>;
+  metrics: QueryFormMetric[];
+  metricsB: QueryFormMetric[];
+  contributionMode?: ContributionType;
+  focusedSeries: string | null;
+};
 
 export type EchartsStylesProps = {
   height: number;
@@ -194,3 +231,78 @@ export class EchartsChartPlugin<
 }
 
 export * from './Timeseries/types';
+
+export type SeriesOptionType = SeriesOption & {
+  itemStyle: {
+    color: string;
+    borderWidth?: number;
+    borderColor?: string;
+  };
+  label?: {
+    formatter?: (params: any) => string;
+  };
+  connectNulls?: boolean;
+  origin?: string;
+  queryIndex: number;
+  id: string;
+};
+
+export type DataZoom = { start: number; end: number };
+export type DataItem = [string, number];
+
+export type SeriesItem = {
+  data: DataItem[];
+  yAxisIndex: number;
+  stack?: string;
+  type?: string;
+};
+
+export type YAxisItem = {
+  scale: boolean;
+  type: string;
+  min?: number;
+  max?: number;
+  minorTick: {
+    show: boolean;
+  };
+  minorSplitLine?: {
+    show: false;
+  };
+  splitLine?: {
+    show: boolean;
+  };
+  axisLabel: {
+    formatter?: (value: number) => string;
+  };
+  nameGap?: number;
+  nameLocation?: string;
+  alignTicks: boolean;
+};
+
+export type XAxisItem = {
+  axisLine: {
+    onZeroAxisIndex?: number;
+  };
+};
+
+export interface EchartOptions extends EChartsType {
+  series: SeriesItem[];
+  yAxis: YAxisItem[];
+  xAxis: XAxisItem;
+}
+
+export interface ChartOptions extends EChartsType {
+  dataZoom?: DataZoom[];
+  series: SeriesOptionType[];
+  legend?: any;
+}
+
+export interface ModifyBarSeriesReturn {
+  SeriesOption?: SeriesOptionType[];
+  barWidth: number;
+  barGap: string;
+}
+
+export type ModifyScatterSeriesReturn = SeriesOptionType & {
+  symbolOffset: number[];
+};

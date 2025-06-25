@@ -233,6 +233,17 @@ function createCustomizeSection(
     ],
     [
       {
+        name: `tooltip_suffix${controlSuffix}`,
+        config: {
+          type: 'TextControl',
+          label: t('Tooltip suffix'),
+          renderTrigger: true,
+          description: t('Change the tooltip suffix to a custom value.'),
+        },
+      },
+    ],
+    [
+      {
         name: `opacity${controlSuffix}`,
         config: {
           type: 'SliderControl',
@@ -363,6 +374,26 @@ const config: ControlPanelConfig = {
       expanded: true,
       controlSetRows: [
         ['color_scheme'],
+        [
+          {
+            name: `change_scatter_plot_color`,
+            config: {
+              type: 'CheckboxControl',
+              label: t('Change Scatter Color'),
+              renderTrigger: true,
+              default: false,
+              description: t(
+                'Change scatter plot color schema to improve visualization.',
+              ),
+              visibility: ({ controls }) => {
+                const hasScatterType =
+                  controls.seriesType.value === 'scatter' ||
+                  controls.seriesTypeB.value === 'scatter';
+                return hasScatterType;
+              },
+            },
+          },
+        ],
         ['time_shift_color'],
         ...createCustomizeSection(t('Query A'), ''),
         ...createCustomizeSection(t('Query B'), 'B'),

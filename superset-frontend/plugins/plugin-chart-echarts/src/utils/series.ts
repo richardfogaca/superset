@@ -53,6 +53,112 @@ import {
 } from '../types';
 import { defaultLegendPadding } from '../defaults';
 
+function getUniqueSeriesNames(
+  rows: DataRecord[],
+  xAxis: string,
+  extraMetricLabels: any[],
+) {
+  const seriesNames: string[] = [];
+  rows.forEach(row => {
+    Object.keys(row).forEach(key => {
+      if (
+        key !== xAxis &&
+        !extraMetricLabels.includes(key) &&
+        !seriesNames.includes(key)
+      ) {
+        seriesNames.push(key);
+      }
+    });
+  });
+  return seriesNames;
+}
+
+export function sortAndFilterSeries_new({
+  rows,
+  xAxis,
+  extraMetricLabels,
+  sortSeriesType,
+  sortSeriesAscending,
+  metricNames, // parameter for custom order
+}: {
+  rows: DataRecord[];
+  xAxis: string;
+  extraMetricLabels: any[];
+  sortSeriesType?: SortSeriesType;
+  sortSeriesAscending?: boolean;
+  metricNames?: string[];
+}) {
+  // This will ensure we have series names based on all rows keys, not only the first row (handle removed null series)
+  const seriesNames = getUniqueSeriesNames(rows, xAxis, extraMetricLabels);
+
+  if (
+    metricNames &&
+    metricNames.length > 0 &&
+    sortSeriesType === SortSeriesType.Met
+  ) {
+    // Create a map for the index of each metricName
+    const metricIndexMap = new Map(
+      metricNames.map((name, index) => [name, index]),
+    );
+
+    // Function to find the index of the metricName for a given seriesName
+    const findMetricIndex = (seriesName: string) => {
+      const foundEntry = [...metricIndexMap.entries()].find(([metricName]) =>
+        seriesName.startsWith(metricName),
+      );
+      return foundEntry ? foundEntry[1] : Number.MAX_VALUE;
+    };
+
+    // Sort seriesNames based on the metricIndex
+    const sortedSeriesNames = seriesNames.sort(
+      (a, b) => findMetricIndex(a) - findMetricIndex(b),
+    );
+
+    return sortedSeriesNames;
+  }
+
+  let aggregator: (name: string) => { name: string; value: any };
+
+  switch (sortSeriesType) {
+    case SortSeriesType.Sum:
+      aggregator = name => ({ name, value: sumBy(rows, name) });
+      break;
+    case SortSeriesType.Min:
+      aggregator = name => ({ name, value: minBy(rows, name)?.[name] });
+      break;
+    case SortSeriesType.Max:
+      aggregator = name => ({ name, value: maxBy(rows, name)?.[name] });
+      break;
+    case SortSeriesType.Avg:
+      aggregator = name => ({ name, value: meanBy(rows, name) });
+      break;
+    case SortSeriesType.MaxAbs:
+      aggregator = name => ({
+        name,
+        value: Math.abs(
+          // @ts-ignore
+          maxBy(
+            // @ts-ignore
+            map(rows, row => ({ ...row, [name]: Math.abs(row[name]) })),
+            name,
+          )?.[name],
+        ),
+      });
+      break;
+    default:
+      aggregator = name => ({ name, value: name.toLowerCase() });
+      break;
+  }
+
+  const sortedValues = seriesNames.map(aggregator);
+
+  return orderBy(
+    sortedValues,
+    ['value'],
+    [sortSeriesAscending ? 'asc' : 'desc'],
+  ).map(({ name }) => name);
+}
+
 function isDefined<T>(value: T | undefined | null): boolean {
   return value !== undefined && value !== null;
 }
@@ -372,13 +478,13 @@ export function extractSeries(
     ...datum,
     [xAxis]: datum[xAxis],
   }));
-  const sortedSeries = sortAndFilterSeries(
+  const sortedSeries = sortAndFilterSeries_new({
     rows,
     xAxis,
     extraMetricLabels,
     sortSeriesType,
     sortSeriesAscending,
-  );
+  });
   const sortedRows =
     isDefined(xAxisSortSeries) && isDefined(xAxisSortSeriesAscending)
       ? sortRows(

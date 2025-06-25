@@ -98,6 +98,7 @@ import {
   getYAxisFormatter,
   convertXAxisValuesToString,
 } from '../utils/formatters';
+import { createTooltipFormatter, formatOptions } from './utils';
 
 const getFormatter = (
   customFormatters: Record<string, ValueFormatter>,
@@ -177,6 +178,8 @@ export default function transformProps(
     stackB,
     truncateXAxis,
     truncateYAxis,
+    tooltipSuffix,
+    tooltipSuffixB,
     tooltipTimeFormat,
     yAxisFormat,
     currencyFormat,
@@ -206,6 +209,7 @@ export default function transformProps(
     sliceId,
     timeGrainSqla,
     percentageThreshold,
+    changeScatterPlotColor,
     metrics = [],
     metricsB = [],
     xAxisForceString,
@@ -421,6 +425,8 @@ export default function transformProps(
     );
     if (transformedSeries) series.push(transformedSeries);
   });
+  // @ts-ignore
+  const rawSeriesAIds = rawSeriesA.map(entry => entry?.id);
 
   rawSeriesB.forEach(entry => {
     const entryName = String(entry.name || '');
@@ -472,6 +478,7 @@ export default function transformProps(
     );
     if (transformedSeries) series.push(transformedSeries);
   });
+  const rawSeriesBIds = rawSeriesB.map(entry => entry.id);
 
   // default to 0-100% range when doing row-level contribution chart
   if (contributionMode === 'row' && stack) {
@@ -707,6 +714,46 @@ export default function transformProps(
       : [],
   };
 
+  // @ts-ignore
+  echartOptions.tooltip.formatter = createTooltipFormatter({
+    rawSeriesAIds,
+    rawSeriesBIds,
+    richTooltip,
+    tooltipSortByMetric,
+    tooltipFormatter,
+    tooltipSuffix,
+    tooltipSuffixB,
+    primarySeries,
+    formatter,
+    formatterSecondary,
+    getFormatter,
+    customFormatters,
+    customFormattersSecondary,
+    groupby,
+    groupbyB,
+    inverted,
+    labelMap,
+    labelMapB,
+    metrics,
+    metricsB,
+    contributionMode,
+    focusedSeries,
+  });
+
+  const newEchartOptions = formatOptions({
+    // @ts-ignore
+    echartOptions,
+    width,
+    changeScatterPlotColor,
+    markerSize,
+    markerSizeB,
+    stack,
+    stackB,
+    yAxisIndex,
+    yAxisIndexB,
+    xAxisMinInterval: undefined,
+  });
+
   const onFocusedSeries = (seriesName: string | null) => {
     focusedSeries = seriesName;
   };
@@ -716,7 +763,7 @@ export default function transformProps(
     : dedupedSeries;
 
   const echartOptionsUpdated = {
-    ...echartOptions,
+    ...newEchartOptions,
     series: convertedStringSeries,
   };
 

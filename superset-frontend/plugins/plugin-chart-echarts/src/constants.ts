@@ -98,6 +98,16 @@ export const TIMEGRAIN_TO_TIMESTAMP = {
   [TimeGranularity.YEAR]: 3600 * 1000 * 24 * 31 * 12,
 };
 
+export const BAR_WIDTH_CONTANTS = {
+  widthMultiplier: 0.6,
+  defaultWidth: 20,
+  defaultGap: '20%',
+  maxBarWidth: 50,
+};
+export const Y_AXIS_PADDING_MULTIPLIER = 1.1;
+export const Y_AXIS_NUMBER_OF_TICKS = 8;
+export const MIXED_CHART_QUERY_B_SUFFIX = '(1)';
+
 export const DEFAULT_LEGEND_FORM_DATA: LegendFormData = {
   legendMargin: null,
   legendOrientation: LegendOrientation.Top,
