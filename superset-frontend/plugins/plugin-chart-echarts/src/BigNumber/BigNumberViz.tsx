@@ -191,7 +191,6 @@ class BigNumberVis extends PureComponent<BigNumberVizProps> {
     );
   }
 
-  // <start> add calculation type to panel bignumber--warnerbros
   renderHeaderWithPrefix(maxHeight: number) {
     const { bigNumber, headerFormatter, prefix, width } = this.props;
     // @ts-ignore
