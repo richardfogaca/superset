@@ -25,7 +25,7 @@ from sqlalchemy.sql import select
 
 from superset import db
 from superset.charts.schemas import ImportV1ChartSchema
-from superset.commands.chart.importers.v1.utils import import_chart
+from superset.commands.chart.importers.v1.utils import import_chart, update_annotations
 from superset.commands.dashboard.exceptions import DashboardImportError
 from superset.commands.dashboard.importers.v1.utils import (
     find_chart_uuids,
@@ -117,6 +117,7 @@ class ImportDashboardsCommand(ImportModelsCommand):
         # import charts with the correct parent ref
         charts = []
         chart_ids: dict[str, int] = {}
+        old_chart_ids: dict[int, int] = {}
         for file_name, config in configs.items():
             if (
                 file_name.startswith("charts/")
@@ -137,6 +138,8 @@ class ImportDashboardsCommand(ImportModelsCommand):
                         import_tag(
                             target_tag_names, contents, chart.id, "chart", db.session
                         )
+        
+        update_annotations(configs, db.session, old_chart_ids)
 
         # store the existing relationship between dashboards and charts
         existing_relationships = db.session.execute(

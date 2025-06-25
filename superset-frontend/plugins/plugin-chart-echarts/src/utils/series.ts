@@ -635,6 +635,113 @@ export function getAxisType(
   return AxisType.Category;
 }
 
+export function getInferredAxisDataType(xAxisType: AxisType) {
+  if (xAxisType === AxisType.Time) {
+    return GenericDataType.Temporal;
+  }
+  if (xAxisType === AxisType.Value) {
+    return GenericDataType.Numeric;
+  }
+  return GenericDataType.String;
+}
+
+function isTimestampValue(value: number) {
+  if (typeof value === 'string') {
+    return true;
+  }
+  // timestamp in numeric 82800 = 1970-01-02 00:00:00
+  return value > 82800;
+}
+
+export function getAxisTypeInference(
+  formData: any,
+  xAxisLabel: string,
+  data: any[],
+): AxisType | undefined {
+  if (
+    typeof formData !== 'undefined' &&
+    formData.hasOwnProperty('vizType') &&
+    (formData.vizType.startsWith('echarts_') ||
+      formData.vizType.endsWith('_timeseries'))
+  ) {
+    let xFirstValue = -1;
+    if (data && data.length > 0) {
+      xFirstValue = data[0][xAxisLabel];
+    }
+    if (!isTimestampValue(xFirstValue)) {
+      if (formData.vizType === 'echarts_timeseries_bar') {
+        return AxisType.Category;
+      }
+      if (formData.vizType === 'echarts_timeseries_line') {
+        return AxisType.Value;
+      }
+      if (formData.vizType === 'echarts_area' && formData?.stack) {
+        return AxisType.Category;
+      }
+    } else {
+      return AxisType.Time;
+    }
+  }
+  return undefined;
+}
+
+export function getInferredAxisType({
+  dataType,
+  formData,
+  xAxisLabel,
+  data,
+  seriesType,
+  dataB,
+  stack,
+  seriesTypeB,
+  stackB,
+  forceCategory,
+}: {
+  dataType: GenericDataType;
+  formData: any;
+  xAxisLabel: string;
+  data: any[];
+  seriesType: EchartsTimeseriesSeriesType;
+  stack: StackType;
+  dataB?: any[];
+  seriesTypeB?: EchartsTimeseriesSeriesType;
+  stackB?: StackType;
+  forceCategory?: boolean;
+}): AxisType {
+  if (forceCategory) return AxisType.Category;
+  // In case there are bars, force the xAxis as category to avoid chart overflow
+  const isBarChart =
+    seriesType === EchartsTimeseriesSeriesType.Bar ||
+    seriesTypeB === EchartsTimeseriesSeriesType.Bar;
+  if (
+    dataType !== GenericDataType.Temporal &&
+    (stack || stackB || isBarChart)
+  ) {
+    return AxisType.Category;
+  }
+  const inferredAxisType = getAxisTypeInference(
+    formData,
+    xAxisLabel,
+    data.length > 0 ? data : dataB || [],
+  );
+  if (inferredAxisType !== undefined) {
+    if (inferredAxisType === AxisType.Time) {
+      if (dataType === GenericDataType.Temporal || dataType === undefined) {
+        return inferredAxisType;
+      }
+    } else {
+      return inferredAxisType;
+    }
+  }
+  if (dataType === GenericDataType.Temporal) {
+    return AxisType.Time;
+  }
+  if (dataType === GenericDataType.Numeric) {
+    return AxisType.Value;
+  }
+  return AxisType.Category;
+}
+
 export function getOverMaxHiddenFormatter(
   config: {
     max?: number;

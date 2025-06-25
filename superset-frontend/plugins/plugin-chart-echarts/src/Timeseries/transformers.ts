@@ -176,6 +176,8 @@ export function transformSeries(
     queryIndex?: number;
     timeCompare?: string[];
     timeShiftColor?: boolean;
+    separateStacks?: boolean;
+    seriesOrigin?: string;
   },
 ): SeriesOption | undefined {
   const { name } = series;
@@ -205,6 +207,8 @@ export function transformSeries(
     queryIndex = 0,
     timeCompare = [],
     timeShiftColor,
+    separateStacks,
+    seriesOrigin,
   } = opts;
   const contexts = seriesContexts[name || ''] || [];
   const hasForecast =
@@ -310,7 +314,7 @@ export function transformSeries(
     step: ['start', 'middle', 'end'].includes(seriesType as string)
       ? seriesType
       : undefined,
-    stack: stackId,
+    stack: separateStacks ? seriesOrigin : stackId,
     stackStrategy:
       isConfidenceBand || stack === StackControlsValue.Stream
         ? 'all'
