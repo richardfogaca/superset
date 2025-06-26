@@ -31,6 +31,7 @@ from superset.utils.dict_import_export import EXPORT_VERSION
 from superset.utils.file import get_filename
 from superset.utils.ssh_tunnel import mask_password_info
 from superset.utils import json
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -97,12 +98,36 @@ class ExportDatasetsCommand(ExportModelsCommand):
             )
             file_path = f"databases/{db_file_name}.yaml"
 
-            payload = model.database.export_to_dict(
+            payload = model.export_to_dict(
                 recursive=False,
                 include_parent_ref=False,
                 include_defaults=True,
                 export_uuids=True,
             )
+            payload["version"] = EXPORT_VERSION
+            payload["database_uuid"] = str(model.database.uuid)
+            
+            if payload['sql']:
+                referenced_datatest_name = re.findall(
+                    r'{{\s*(?:dataset|dataset_custom)\(\s*[\"\']([^\"\']*)[\"\']\s*(?:,\s*[^\)]*)?\)\s*}}',
+                    payload["sql"]
+                )
+                referenced_datatest_ids = []
+                referenced_datatest_name = list(set(referenced_datatest_name))
+
+                for dataset_name in referenced_datatest_name:
+                    try:
+                        dataset_ = DatasetDAO.get_dataset_by_name(dataset_name)
+                        referenced_datatest_ids.append(dataset_.id)
+                    except:
+                        # Means the name of the table is not unique
+                        logger.warning(f"Unable to locate the jinja referenced table "
+                                       f"dataset: {dataset_name}, referenced in "
+                                       f"{payload['table_name']}")
+                referenced_datatest_ids = [int(el) for el in referenced_datatest_ids]
+                if len(referenced_datatest_ids) > 0:
+                    yield from ExportDatasetsCommand(referenced_datatest_ids).run()
+
             # TODO (betodealmeida): move this logic to export_to_dict once this
             # becomes the default export endpoint
             if payload.get("extra"):
