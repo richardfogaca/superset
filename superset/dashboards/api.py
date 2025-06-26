@@ -22,7 +22,7 @@ from io import BytesIO
 from typing import Any, Callable, cast
 from zipfile import is_zipfile, ZipFile
 
-from flask import g, redirect, request, Response, send_file, url_for
+from flask import g, redirect, request, Response, send_file, url_for, make_response
 from flask_appbuilder import permission_name
 from flask_appbuilder.api import expose, protect, rison, safe
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -31,7 +31,7 @@ from marshmallow import ValidationError
 from werkzeug.wrappers import Response as WerkzeugResponse
 from werkzeug.wsgi import FileWrapper
 
-from superset import db
+from superset import db, is_feature_enabled
 from superset.charts.schemas import ChartEntityResponseSchema
 from superset.commands.dashboard.copy import CopyDashboardCommand
 from superset.commands.dashboard.create import CreateDashboardCommand
@@ -998,25 +998,23 @@ class DashboardRestApi(BaseSupersetModelRestApi):
               $ref: '#/components/responses/500'
         """
         requested_ids = kwargs["rison"]
+        token = request.args.get("token")
 
         if is_feature_enabled("VERSIONED_EXPORT"):
             if len(requested_ids) > 1:
                 resp = make_response('not_allowed', 404)
                 if token:
-                    resp.set_cookie(token, "error: cannot export multiple dashboards at the same time")
+                    resp.set_cookie(token, "ERROR: cannot export multiple dashboards at the same time")  # noqa
                 return resp
             dashboard_to_export = DashboardDAO.find_by_id(requested_ids[0])
             if not dashboard_to_export.slug:
                 resp = make_response('not_allowed', 404)
                 if token:
-                    resp.set_cookie(token, "error: missing slug")
+                    resp.set_cookie(token,
+                                    "ERROR: missing slug")
                 return resp
             root = f"{dashboard_to_export.slug}"
             filename = f"{root}.zip"
-
-        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-        root = f"dashboard_export_{timestamp}"
-        filename = f"{root}.zip"
 
         buf = BytesIO()
         with ZipFile(buf, "w") as bundle:
