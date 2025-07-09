@@ -16,8 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { styled, t } from '@superset-ui/core';
-import { SafeMarkdown } from '@superset-ui/core/components';
+import {
+  SafeMarkdown,
+  SafeMarkdownJS,
+  styled,
+  t,
+  isHandlebarsJavascriptEnabled,
+} from '@superset-ui/core';
 import Handlebars from 'handlebars';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
@@ -43,6 +48,7 @@ export const HandlebarsViewer = ({
   const htmlSanitization = common?.conf?.HTML_SANITIZATION ?? true;
   const htmlSchemaOverrides =
     common?.conf?.HTML_SANITIZATION_SCHEMA_EXTENSIONS || {};
+  const isJSEnabled = isHandlebarsJavascriptEnabled();
 
   useMemo(() => {
     try {
@@ -65,11 +71,15 @@ export const HandlebarsViewer = ({
   }
 
   if (renderedTemplate) {
+    if (isJSEnabled) {
+      return <SafeMarkdownJS source={renderedTemplate} />;
+    }
     return (
       <SafeMarkdown
         source={renderedTemplate}
         htmlSanitization={htmlSanitization}
         htmlSchemaOverrides={htmlSchemaOverrides}
+        isJSEnabled={isJSEnabled}
       />
     );
   }
