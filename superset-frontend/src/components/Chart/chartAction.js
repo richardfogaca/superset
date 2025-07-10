@@ -218,6 +218,19 @@ const v1ChartDataRequest = async (
     }
   }
 
+  let staticLocalURL = window.location.href;
+  if (staticLocalURL.search('deck_extra_filters') > 0) {
+    staticLocalURL = staticLocalURL.replace('#', '');
+    const params = new URLSearchParams(staticLocalURL);
+    let newDeckExtraParams = [];
+    params.forEach(function (value, key) {
+      if (key === 'deck_extra_filters') {
+        newDeckExtraParams = JSON.parse(value);
+      }
+    });
+    payload.form_data.deck_extra_filters = newDeckExtraParams;
+  }
+
   const querySettings = {
     ...requestParams,
     url,

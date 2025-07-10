@@ -50,7 +50,7 @@ from superset.utils.core import (
     create_zip,
     DatasourceType,
     get_user_id,
-    merge_chart_extra_filters,
+    merge_deck_chart_extra_filters,
 )
 from superset.utils.decorators import logs_context
 from superset.views.base import CsvResponse, generate_download_headers, XlsxResponse
@@ -233,7 +233,7 @@ class ChartDataRestApi(ChartRestApi):
         if json_body is None:
             return self.response_400(message=_("Request is not JSON"))
 
-        merge_chart_extra_filters(json_body)
+        merge_deck_chart_extra_filters(json_body)
 
         try:
             query_context = self._create_query_context_from_form(json_body)

@@ -209,6 +209,9 @@ export function transformSeries(
     timeShiftColor?: boolean;
     xAxisForceString?: boolean;
     showTotalsByBar?: boolean;
+    removeNullValues?: boolean;
+    separateStacks?: boolean;
+    seriesOrigin?: string;
   },
 ): SeriesOption | undefined {
   const { name } = series;
@@ -239,6 +242,10 @@ export function transformSeries(
     timeCompare = [],
     timeShiftColor,
     xAxisForceString,
+    removeNullValues,
+    separateStacks,
+    seriesOrigin,
+    showTotalsByBar,
   } = opts;
   const formattedTotalStackedValues = formatTotalStackedValues(
     totalStackedValues,
@@ -335,7 +342,7 @@ export function transformSeries(
       : { ...opts.lineStyle, opacity };
   return {
     ...series,
-    connectNulls,
+    connectNulls: plotType === 'line' && removeNullValues ? true : undefined,
     queryIndex,
     yAxisIndex,
     name: forecastSeries.name,
@@ -348,7 +355,7 @@ export function transformSeries(
     step: ['start', 'middle', 'end'].includes(seriesType as string)
       ? seriesType
       : undefined,
-    stack: stackId,
+    stack: separateStacks ? seriesOrigin : stackId,
     stackStrategy:
       isConfidenceBand || stack === StackControlsValue.Stream
         ? 'all'
@@ -363,11 +370,11 @@ export function transformSeries(
     emphasis,
     showSymbol,
     symbolSize: markerSize,
+    origin: seriesOrigin,
     label: {
       show: !!showValue,
       position: isHorizontal ? 'right' : 'top',
       formatter: (params: any) => {
-        // don't show confidence band value labels, as they're already visible on the tooltip
         if (
           [
             ForecastSeriesEnum.ForecastUpper,
@@ -379,12 +386,12 @@ export function transformSeries(
         const { value, dataIndex, seriesIndex, seriesName, seriesId } = params;
         const numericValue = isHorizontal ? value[0] : value[1];
         const labelValue = isHorizontal ? value[1] : value[0];
-        const isSelectedLegend = !legendState || legendState[seriesName];
+        const isSelectedLegend = seriesName === '';
         const isAreaExpand = stack === StackControlsValue.Expand;
         let totalValueForIndex = 0;
         if (formattedTotalStackedValues) {
           const commaIndex = seriesId?.toString().indexOf(', ');
-          if (formatter && commaIndex !== -1) {
+          if (showTotalsByBar && formatter && commaIndex !== -1) {
             const stackName = seriesId?.toString().substring(commaIndex + 2);
 
             if (
@@ -412,7 +419,7 @@ export function transformSeries(
         if (!formatter) {
           return numericValue;
         }
-        if (!stack && isSelectedLegend) {
+        if (!stack || isSelectedLegend) {
           return formatter(numericValue);
         }
         if (!onlyTotal) {
@@ -428,8 +435,8 @@ export function transformSeries(
             return formatter(numericValue);
           return '';
         }
-        if (seriesIndex === showValueIndexes[dataIndex]) {
-          return formatter(isAreaExpand ? 1 : totalStackedValues[dataIndex]);
+        if (showValueIndexes && seriesIndex === showValueIndexes[dataIndex]) {
+          return formatter(isAreaExpand ? 1 : totalValueForIndex);
         }
         return '';
       },

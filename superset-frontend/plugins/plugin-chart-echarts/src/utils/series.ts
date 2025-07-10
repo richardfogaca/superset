@@ -444,6 +444,16 @@ export function sortRows(
   ).map(({ row, totalStackedValue }) => ({ row, totalStackedValue }));
 }
 
+export function filterNullRows(rows: DataRecord[]) {
+  return rows.map(row =>
+    Object.fromEntries(
+      Object.entries(row).filter(
+        ([key, value]) => value !== null && value !== undefined,
+      ),
+    ),
+  );
+}
+
 export function extractSeries(
   data: DataRecord[],
   opts: {
@@ -458,6 +468,8 @@ export function extractSeries(
     sortSeriesAscending?: boolean;
     xAxisSortSeries?: SortSeriesType;
     xAxisSortSeriesAscending?: boolean;
+    parseNullAsZero?: boolean;
+    metricNames?: string[];
   } = {},
 ): [SeriesOption[], number[], number | undefined] {
   const {
@@ -472,7 +484,16 @@ export function extractSeries(
     sortSeriesAscending,
     xAxisSortSeries,
     xAxisSortSeriesAscending,
+    parseNullAsZero = false,
+    metricNames = [],
   } = opts;
+  let noNullRows = data;
+  if (parseNullAsZero) {
+    noNullRows = filterNullRows(noNullRows).filter((x: DataRecord) => {
+      const keys = Object.keys(x);
+      return !(keys && keys.length === 1 && keys[0] === xAxis);
+    });
+  }
   if (data.length === 0) return [[], [], undefined];
   const rows: DataRecord[] = data.map(datum => ({
     ...datum,

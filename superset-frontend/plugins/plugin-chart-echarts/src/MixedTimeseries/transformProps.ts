@@ -174,6 +174,8 @@ export default function transformProps(
     showLegend,
     showValue,
     showValueB,
+    removeNullValues,
+    removeNullValuesB,
     stack,
     stackB,
     truncateXAxis,
@@ -213,6 +215,14 @@ export default function transformProps(
     metrics = [],
     metricsB = [],
     xAxisForceString,
+    separateStacks,
+    xAxisMinInterval,
+    onlyTotal,
+    onlyTotalB,
+    sortSeriesType,
+    sortSeriesTypeB,
+    sortSeriesAscending,
+    sortSeriesAscendingB,
   }: EchartsMixedTimeseriesFormData = { ...DEFAULT_FORM_DATA, ...formData };
 
   const refs: Refs = {};
@@ -232,11 +242,17 @@ export default function transformProps(
   const [rawSeriesA] = extractSeries(rebasedDataA, {
     fillNeighborValue: stack ? 0 : undefined,
     xAxis: xAxisLabel,
+    sortSeriesType,
+    sortSeriesAscending,
+    parseNullAsZero: removeNullValues,
   });
   const rebasedDataB = rebaseForecastDatum(data2, verboseMap);
   const [rawSeriesB] = extractSeries(rebasedDataB, {
     fillNeighborValue: stackB ? 0 : undefined,
     xAxis: xAxisLabel,
+    sortSeriesType: sortSeriesTypeB,
+    sortSeriesAscending: sortSeriesAscendingB,
+    parseNullAsZero: removeNullValuesB,
   });
 
   const dataTypes = getColtypesMapping(queriesData[0]);
@@ -297,12 +313,16 @@ export default function transformProps(
   );
   const showValueIndexesA = extractShowValueIndexes(rawSeriesA, {
     stack,
+    onlyTotal,
   });
   const showValueIndexesB = extractShowValueIndexes(rawSeriesB, {
-    stack,
+    stack: stackB,
+    onlyTotal: onlyTotalB,
+    seriesOffset: rawSeriesA.length,
   });
   const { totalStackedValues, thresholdValues } = extractDataTotalValues(
     rebasedDataA,
+    // @ts-ignore
     {
       stack,
       percentageThreshold,
@@ -312,6 +332,7 @@ export default function transformProps(
   const {
     totalStackedValues: totalStackedValuesB,
     thresholdValues: thresholdValuesB,
+    // @ts-ignore
   } = extractDataTotalValues(rebasedDataB, {
     stack: Boolean(stackB),
     percentageThreshold,
@@ -409,6 +430,8 @@ export default function transformProps(
         seriesKey: entry.name,
         sliceId,
         queryIndex: 0,
+        thresholdValues,
+        timeShiftColor,
         formatter:
           seriesType === EchartsTimeseriesSeriesType.Bar
             ? getOverMaxHiddenFormatter({
@@ -416,10 +439,16 @@ export default function transformProps(
                 formatter: seriesFormatter,
               })
             : seriesFormatter,
-        showValueIndexes: showValueIndexesA,
+        changeScatterPlotColor,
+        // @ts-ignore
         totalStackedValues,
-        thresholdValues,
-        timeShiftColor,
+        showValueIndexes: showValueIndexesA,
+        removeNullValues,
+        seriesOrigin: 'A',
+        separateStacks,
+        bothStack: Boolean(stack) && Boolean(stackB),
+        yIndexA: yAxisIndex,
+        yIndexB: yAxisIndexB,
         xAxisForceString: xForceString,
       },
     );
@@ -470,6 +499,7 @@ export default function transformProps(
               })
             : seriesFormatter,
         showValueIndexes: showValueIndexesB,
+        // @ts-ignore
         totalStackedValues: totalStackedValuesB,
         thresholdValues: thresholdValuesB,
         timeShiftColor,
@@ -751,7 +781,7 @@ export default function transformProps(
     stackB,
     yAxisIndex,
     yAxisIndexB,
-    xAxisMinInterval: undefined,
+    xAxisMinInterval,
   });
 
   const onFocusedSeries = (seriesName: string | null) => {

@@ -1023,10 +1023,10 @@ def get_filter_key(f: Dict[str, Any]) -> str:
     return "{}__{}".format(f["col"], f["op"])
 
 
-def merge_chart_extra_filters(json_body: Dict[str, Any]):
+def merge_deck_chart_extra_filters(json_body: Dict[str, Any]):
     queries = json_body.get('queries', [])
     if len(queries) > 0:
-        extra_filters = json_body.get('form_data', {}).get('extra_filters', {})
+        extra_filters = json_body.get('form_data', {}).get('deck_extra_filters', {})
         upgrade_query = []
         if not extra_filters:
             return
@@ -1055,9 +1055,9 @@ def merge_explore_extra_filters(
     form_data: Dict[str, Any],
     request_args: Dict[str, Any]
 ) -> None:
-    extra_filters = request_args.get('extra_filters', {})
-    if extra_filters:
-        upgrade_filters = json.loads(extra_filters).get("upgrade_filters", []) or []
+    deck_filters = request_args.get('deck_extra_filters', {})
+    if deck_filters:
+        upgrade_filters = json.loads(deck_filters).get("upgrade_filters", []) or []
         if len(upgrade_filters) == 0:
             return
 

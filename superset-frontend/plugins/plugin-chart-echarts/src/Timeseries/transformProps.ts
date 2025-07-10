@@ -345,7 +345,11 @@ export default function transformProps(
             ) ?? defaultFormatter),
         showValue,
         onlyTotal,
-        totalStackedValues: sortedTotalValues,
+        // @ts-ignore
+        totalStackedValues:
+          stack === StackControlsValue.Stream
+            ? sortedTotalValues
+            : totalStackedValues,
         showValueIndexes,
         thresholdValues,
         richTooltip,
@@ -354,8 +358,9 @@ export default function transformProps(
         lineStyle,
         timeCompare: array,
         timeShiftColor,
-        xAxisForceString,
         showTotalsByBar,
+        removeNullValues,
+        xAxisForceString: xForceString,
       },
     );
     if (transformedSeries) {

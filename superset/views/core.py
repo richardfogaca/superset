@@ -863,6 +863,10 @@ class Superset(BaseSupersetView):
             url = f"{url}&{original_params}"
         if hash_ := state.get("anchor", state.get("hash")):
             url = f"{url}#{hash_}"
+        for new_args in ['deck_extra_filters']:
+            if request.args.get(new_args, None):
+                value = parse.quote(request.args.get(new_args))
+                url = f"{url}&{new_args}={value}"
         return redirect(url)
 
     @api
