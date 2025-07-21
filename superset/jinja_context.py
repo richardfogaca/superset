@@ -580,6 +580,28 @@ class WhereInMacro:  # pylint: disable=too-few-public-methods
             )
 
         return result
+      
+      
+def between(values: list[Any]) -> str:
+    """
+    Given a list of bounds and operators, build a 'BETWEEN'/'<='/'>=' expression.
+    """
+    if values:
+        if not isinstance(values[0], dict):
+            raise SupersetTemplateException(
+                _(
+                    "The jinja filter 'between' is not applicable with filter_values()."
+                    "Use get_filters() instead"
+                )
+            )
+
+    statement = None
+    if len(values) == 2:
+        statement = f"BETWEEN {values[0]['val']} AND {values[1]['val']}"
+    elif len(values) == 1:
+        statement = f"{values[0]['op'].replace('==', '=')} {values[0]['val']}"
+
+    return statement
 
 
 def to_datetime(
@@ -636,6 +658,7 @@ class BaseTemplateProcessor:
         # custom filters
         self.env.filters["where_in"] = WhereInMacro(database.get_dialect())
         self.env.filters["to_datetime"] = to_datetime
+        self.env.filters["between"] = between
 
     def set_context(self, **kwargs: Any) -> None:
         self._context.update(kwargs)
@@ -718,6 +741,7 @@ class JinjaTemplateProcessor(BaseTemplateProcessor):
                 "get_filters": partial(safe_proxy, extra_cache.get_filters),
                 "dataset": partial(safe_proxy, dataset_macro_with_context),
                 "dataset_custom": partial(safe_proxy, dataset_macro_custom),
+                "metric": partial(safe_proxy, metric_macro),
                 "get_time_filter": partial(safe_proxy, extra_cache.get_time_filter),
             }
         )
@@ -873,7 +897,7 @@ def get_template_processor(
 
 
 def dataset_macro(
-    dataset_id: int,
+    dataset_name: str,
     include_metrics: bool = False,
     columns: Optional[list[str]] = None,
     from_dttm: Optional[datetime] = None,
@@ -894,7 +918,7 @@ def dataset_macro(
 
     dataset = DatasetDAO.get_dataset_by_name(dataset_name)
     if not dataset:
-        raise DatasetNotFoundError(f"Dataset {dataset_id} not found!")
+        raise DatasetNotFoundError(f"Dataset {dataset_name} not found!")
 
     columns = columns or [column.column_name for column in dataset.columns]
     metrics = [metric.metric_name for metric in dataset.metrics]
@@ -908,7 +932,7 @@ def dataset_macro(
     }
     sqla_query = dataset.get_query_str_extended(query_obj, mutate=False)
     sql = sqla_query.sql
-    return f"(\n{sql}\n) AS dataset_{dataset_id}"
+    return f"({sql}) AS dataset_{dataset.id}"
 
 
 def dataset_macro_custom(

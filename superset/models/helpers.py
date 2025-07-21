@@ -65,14 +65,16 @@ from superset.exceptions import (
     QueryObjectValidationError,
     SupersetParseError,
     SupersetSecurityException,
+    SupersetParseError,
 )
 from superset.extensions import feature_flag_manager
 from superset.jinja_context import BaseTemplateProcessor
-from superset.sql.parse import SQLScript
+from superset.utils.sql_script_parser import SQLScriptParser
 from superset.sql_parse import (
     has_table_query,
     insert_rls_in_predicate,
     sanitize_clause,
+    ParsedQuery,  # <start-end> warnerbros - sqlglot parse issues (superset 5.0)
 )
 from superset.superset_typing import (
     AdhocMetric,
@@ -1066,7 +1068,8 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                     )
                 ) from ex
 
-        script = SQLScript(sql, engine=self.db_engine_spec.engine)
+        script = SQLScriptParser(sql, engine=self.db_engine_spec.engine)
+        sql = script.sql_formatted
         if len(script.statements) > 1:
             raise QueryObjectValidationError(
                 _("Virtual dataset query cannot consist of multiple statements")
@@ -1088,7 +1091,7 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
         CTE, the CTE is returned as the second value in the return tuple.
         """
         from_sql = self.get_rendered_sql(template_processor) + "\n"
-        parsed_script = SQLScript(from_sql, engine=self.db_engine_spec.engine)
+        parsed_script = SQLScriptParser(from_sql, engine=self.db_engine_spec.engine)
         if parsed_script.has_mutation():
             raise QueryObjectValidationError(
                 _("Virtual dataset query must be read-only")

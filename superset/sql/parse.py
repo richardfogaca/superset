@@ -29,6 +29,7 @@ from typing import Any, Generic, TypeVar
 import sqlglot
 import sqlparse
 from deprecation import deprecated
+from jinja2 import nodes, Template
 from sqlglot import exp
 from sqlglot.dialects.dialect import Dialect, Dialects
 from sqlglot.errors import ParseError
@@ -156,7 +157,7 @@ class BaseSQLStatement(Generic[InternalRepresentation]):
     def __init__(
         self,
         statement: str,
-        engine: str,
+        engine: str = "base",
         ast: InternalRepresentation | None = None,
     ):
         self._sql = statement
@@ -287,47 +288,14 @@ class SQLStatement(BaseSQLStatement[exp.Expression]):
         script: str,
         engine: str,
     ) -> list[SQLStatement]:
-        if dialect := SQLGLOT_DIALECTS.get(engine):
-            try:
-                return [
-                    cls(ast.sql(), engine, ast)
-                    for ast in cls._parse(script, engine)
-                    if ast
-                ]
-            except ValueError:
-                # `ast.sql()` might raise an error on some cases (eg, `SHOW TABLES
-                # FROM`). In this case, we rely on the tokenizer to generate the
-                # statements.
-                pass
-
-        # When we don't have a sqlglot dialect we can't rely on `ast.sql()` to correctly
-        # generate the SQL of each statement, so we tokenize the script and split it
-        # based on the location of semi-colons.
-        statements = []
-        start = 0
-        remainder = script
-
-        try:
-            tokens = sqlglot.tokenize(script, dialect)
-        except sqlglot.errors.TokenError as ex:
-            raise SupersetParseError(
-                script,
-                engine,
-                message="Unable to tokenize script",
-            ) from ex
-
-        for token in tokens:
-            if token.token_type == sqlglot.TokenType.SEMICOLON:
-                statement, start = script[start : token.start], token.end + 1
-                ast = cls._parse(statement, engine)[0]
-                statements.append(cls(statement.strip(), engine, ast))
-                remainder = script[start:]
-
-        if remainder.strip():
-            ast = cls._parse(remainder, engine)[0]
-            statements.append(cls(remainder.strip(), engine, ast))
-
-        return statements
+        # Parse the script to get individual AST statements
+        parsed_statements = cls._parse(script, engine)
+        
+        # We need to reconstruct the original SQL text for each statement
+        # For fallback formatting, we'll pass the full script to each statement
+        return [
+            cls(statement=script, engine=engine, ast=ast) for ast in parsed_statements if ast
+        ]
 
     @classmethod
     def _parse_statement(
@@ -397,20 +365,9 @@ class SQLStatement(BaseSQLStatement[exp.Expression]):
         """
         Pretty-format the SQL statement.
         """
-        if self._dialect:
-            try:
-                write = Dialect.get_or_raise(self._dialect)
-                return write.generate(
-                    self._parsed,
-                    copy=False,
-                    comments=comments,
-                    pretty=True,
-                )
-            except ValueError:
-                pass
-
+        # Use SQLParse formatting by default to avoid comma-JOIN transformation issues
         return self._fallback_formatting()
-
+          
     @deprecated(deprecated_in="4.0")
     def _fallback_formatting(self) -> str:
         """
