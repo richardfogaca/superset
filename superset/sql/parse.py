@@ -328,7 +328,7 @@ class BaseSQLStatement(Generic[InternalRepresentation]):
     def __init__(
         self,
         statement: str,
-        engine: str = "base",
+        engine: str,
         ast: InternalRepresentation | None = None,
     ):
         if ast:
