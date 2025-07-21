@@ -331,13 +331,8 @@ class BaseSQLStatement(Generic[InternalRepresentation]):
         engine: str,
         ast: InternalRepresentation | None = None,
     ):
-        if ast:
-            self._parsed = ast
-        elif statement:
-            self._parsed = self._parse_statement(statement, engine)
-        else:
-            raise ValueError("Either statement or ast must be provided")
-
+        self._sql = statement
+        self._parsed = ast or self._parse_statement(statement, engine)
         self.engine = engine
         self.tables = self._extract_tables_from_statement(self._parsed, self.engine)
 

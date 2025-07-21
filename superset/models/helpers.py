@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import pytz
 import sqlalchemy as sa
+import sqlparse
 import yaml
 from flask import g
 from flask_appbuilder import Model
@@ -114,10 +115,9 @@ ADVANCED_DATA_TYPES = config["ADVANCED_DATA_TYPES"]
 
 def validate_adhoc_subquery(
     sql: str,
-    database: Database,
-    catalog: str | None,
-    default_schema: str,
+    database_id: int,
     engine: str,
+    default_schema: str,
 ) -> str:
     """
     Check if adhoc SQL contains sub-queries or nested sub-queries with table.
@@ -129,21 +129,28 @@ def validate_adhoc_subquery(
     :raise SupersetSecurityException if sql contains sub-queries or
     nested sub-queries with table
     """
-    parsed_statement = SQLStatement(sql, engine)
-    if parsed_statement.has_subquery():
-        if not is_feature_enabled("ALLOW_ADHOC_SUBQUERY"):
-            raise SupersetSecurityException(
-                SupersetError(
-                    error_type=SupersetErrorType.ADHOC_SUBQUERY_NOT_ALLOWED_ERROR,
-                    message=_("Custom SQL fields cannot contain sub-queries."),
-                    level=ErrorLevel.ERROR,
+    statements = []
+    for statement in sqlparse.parse(sql):
+        try:
+            has_table = has_table_query(str(statement), engine)
+        except SupersetParseError:
+            has_table = True
+
+        if has_table:
+            if not is_feature_enabled("ALLOW_ADHOC_SUBQUERY"):
+                raise SupersetSecurityException(
+                    SupersetError(
+                        error_type=SupersetErrorType.ADHOC_SUBQUERY_NOT_ALLOWED_ERROR,
+                        message=_("Custom SQL fields cannot contain sub-queries."),
+                        level=ErrorLevel.ERROR,
+                    )
                 )
-            )
+            # TODO (betodealmeida): reimplement with sqlglot
+            statement = insert_rls_in_predicate(statement, database_id, default_schema)
 
-        # enforce RLS rules in any relevant tables
-        apply_rls(database, catalog, default_schema, parsed_statement)
+        statements.append(statement)
 
-    return parsed_statement.format()
+    return ";\n".join(str(statement) for statement in statements)
 
 
 def json_to_dict(json_str: str) -> dict[Any, Any]:
@@ -836,13 +843,12 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
         if expression:
             expression = validate_adhoc_subquery(
                 expression,
-                self.database,
-                self.catalog,
-                schema,
+                database_id,
                 engine,
+                schema,
             )
             try:
-                expression = sanitize_clause(expression, engine)
+                expression = sanitize_clause(expression)
             except QueryClauseValidationException as ex:
                 raise QueryObjectValidationError(ex.message) from ex
         return expression
@@ -1641,10 +1647,9 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
                     else:
                         selected = validate_adhoc_subquery(
                             selected,
-                            self.database,
-                            self.catalog,
+                            self.database_id,
+                            self.database.backend,
                             self.schema,
-                            self.database.db_engine_spec.engine,
                         )
                         outer = literal_column(f"({selected})")
                         outer = self.make_sqla_column_compatible(outer, selected)
@@ -1670,10 +1675,9 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
 
                 selected = validate_adhoc_subquery(
                     _sql,
-                    self.database,
-                    self.catalog,
+                    self.database_id,
+                    self.database.backend,
                     self.schema,
-                    self.database.db_engine_spec.engine,
                 )
 
                 select_exprs.append(
