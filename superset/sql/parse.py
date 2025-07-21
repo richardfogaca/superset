@@ -27,6 +27,8 @@ from dataclasses import dataclass
 from typing import Any, Generic, TYPE_CHECKING, TypeVar
 
 import sqlglot
+import sqlparse
+from deprecation import deprecated
 from jinja2 import nodes, Template
 from sqlglot import exp
 from sqlglot.dialects.dialect import Dialect, Dialects
@@ -325,7 +327,7 @@ class BaseSQLStatement(Generic[InternalRepresentation]):
 
     def __init__(
         self,
-        statement: str | None = None,
+        statement: str,
         engine: str = "base",
         ast: InternalRepresentation | None = None,
     ):
@@ -571,8 +573,13 @@ class SQLStatement(BaseSQLStatement[exp.Expression]):
         script: str,
         engine: str,
     ) -> list[SQLStatement]:
+        # Parse the script to get individual AST statements
+        parsed_statements = cls._parse(script, engine)
+        
+        # We need to reconstruct the original SQL text for each statement
+        # For fallback formatting, we'll pass the full script to each statement
         return [
-            cls(ast=ast, engine=engine) for ast in cls._parse(script, engine) if ast
+            cls(statement=script, engine=engine, ast=ast) for ast in parsed_statements if ast
         ]
 
     @classmethod
@@ -659,12 +666,23 @@ class SQLStatement(BaseSQLStatement[exp.Expression]):
         """
         Pretty-format the SQL statement.
         """
-        return Dialect.get_or_raise(self._dialect).generate(
-            self._parsed,
-            copy=True,
-            comments=comments,
-            pretty=True,
-        )
+        # Use SQLParse formatting by default to avoid comma-JOIN transformation issues
+        return self._fallback_formatting()
+          
+    @deprecated(deprecated_in="4.0")
+    def _fallback_formatting(self) -> str:
+        """
+        Format SQL without a specific dialect.
+
+        Reformatting SQL using the generic sqlglot dialect is known to break queries.
+        For example, it will change `foo NOT IN (1, 2)` to `NOT foo IN (1,2)`, which
+        breaks the query for Firebolt. To avoid this, we use sqlparse for formatting
+        when the dialect is not known.
+
+        In 5.0 we should remove `sqlparse`, and the method should return the query
+        unmodified.
+        """
+        return sqlparse.format(self._sql, reindent=True, keyword_case="upper")
 
     def get_settings(self) -> dict[str, str | bool]:
         """
