@@ -48,11 +48,7 @@ const renderDraggableContent = dropProps =>
   dropProps.dropIndicatorProps && <div {...dropProps.dropIndicatorProps} />;
 
 const DashboardEmptyStateContainer = styled.div`
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: relative;
 `;
 
 const GridContent = styled.div`
