@@ -74,7 +74,7 @@ const getLastUpdatedLine = (
 ): string | undefined =>
   elapsedSeconds === null
     ? undefined
-    : t('Last updated %s ago', formatElapsedTime(elapsedSeconds));
+    : t('Last updated %s', formatElapsedTime(elapsedSeconds));
 
 const getNextRefreshInSeconds = (
   lastAutoRefreshTime: number | null,

@@ -18,7 +18,7 @@
  */
 import { useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { AutoRefreshStatus } from '../types/autoRefresh';
+import { AutoRefreshStatus, ERROR_THRESHOLD_COUNT } from '../types/autoRefresh';
 import { DashboardState, RootState } from '../types';
 import {
   setAutoRefreshStatus,
@@ -93,11 +93,11 @@ export const selectEffectiveRefreshStatus = (
     return AutoRefreshStatus.Fetching;
   }
 
-  if (refreshErrorCount >= 2) {
+  if (refreshErrorCount >= ERROR_THRESHOLD_COUNT) {
     return AutoRefreshStatus.Error;
   }
 
-  if (refreshErrorCount === 1) {
+  if (refreshErrorCount >= 1) {
     return AutoRefreshStatus.Delayed;
   }
 

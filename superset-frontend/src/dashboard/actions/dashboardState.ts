@@ -850,12 +850,14 @@ export function onRefresh(
       interval,
       dashboardId,
       dispatch,
-    ).then(() => {
-      dispatch(onRefreshSuccess());
-      if (!skipFiltersRefresh && !isLazyLoad) {
-        dispatch(onFiltersRefresh());
-      }
-    });
+    )
+      .catch(() => undefined)
+      .finally(() => {
+        dispatch(onRefreshSuccess());
+        if (!skipFiltersRefresh && !isLazyLoad) {
+          dispatch(onFiltersRefresh());
+        }
+      });
   };
 }
 

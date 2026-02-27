@@ -181,13 +181,12 @@ const Tab = (props: TabProps): ReactElement => {
 
         // Only proceed if we haven't already handled this refresh
         if (handledRefreshRef.current !== refreshKey) {
-          handledRefreshRef.current = refreshKey;
-
           const chartIds = getChartIdsFromComponent(props.id, dashboardLayout);
           if (chartIds.length > 0) {
             if (isAutoRefreshing || isRefreshInFlight) {
               return;
             }
+            handledRefreshRef.current = refreshKey;
             // Use lazy load flags to avoid updating global refresh time and filters
             setTimeout(() => {
               dispatch(
