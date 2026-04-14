@@ -207,4 +207,52 @@ describe('getFormDataWithExtraFilters', () => {
     expect((result as any).time_grain_sqla).toEqual('PT1H');
     expect(result.extra_form_data).toBeDefined();
   });
+
+  test('should replace stale chord groupby values with the selected dynamic groupby column', () => {
+    const customizationId = 'CHART_CUSTOMIZATION-CHORD';
+    const result = getFormDataWithExtraFilters({
+      ...mockArgs,
+      chart: {
+        ...mockChart,
+        form_data: {
+          ...mockChart.form_data,
+          viz_type: 'chord',
+          datasource: '3__table',
+          groupby: ['status'],
+        },
+      },
+      dataMask: {
+        [customizationId]: {
+          id: customizationId,
+          extraFormData: {},
+          filterState: {
+            value: ['payment_method'],
+          },
+          ownState: {},
+        },
+      },
+      chartCustomizationItems: [
+        {
+          id: customizationId,
+          type: 'CHART_CUSTOMIZATION' as any,
+          name: 'Dynamic Group By',
+          filterType: 'chart_customization_dynamic_groupby',
+          targets: [{ datasetId: 3, column: { name: 'payment_method' } }],
+          scope: {
+            rootPath: [],
+            excluded: [],
+          },
+          chartsInScope: [chartId],
+          defaultDataMask: {},
+          controlValues: {},
+        },
+      ],
+    });
+
+    expect('groupby' in result).toBe(true);
+    if (!('groupby' in result)) {
+      throw new Error('Expected groupby to be present in form data');
+    }
+    expect(result.groupby).toEqual(['payment_method']);
+  });
 });
